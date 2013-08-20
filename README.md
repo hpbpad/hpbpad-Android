@@ -1,4 +1,4 @@
 hpbpad-Android
 ==============
 
-hpbpad for Android
+hpb pad for WordPress (Android)
