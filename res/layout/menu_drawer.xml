@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent" android:layout_height="match_parent"
+	android:orientation="vertical">
+	<ListView android:id="@+id/listView1" android:layout_width="match_parent"
+		android:layout_height="0dp" android:layout_weight="1"
+		android:background="@drawable/md_bg" android:cacheColorHint="@android:color/transparent"
+		android:scrollingCache="false" />
+
+	<ImageButton android:id="@+id/setting"
+		android:layout_width="match_parent" android:layout_height="48dp"
+		android:src="@drawable/ic_md_settings" android:background="@drawable/md_button_selector"
+		android:paddingTop="1dp" android:paddingBottom="3dp" android:tint="#FFFFFF" />
+</LinearLayout>

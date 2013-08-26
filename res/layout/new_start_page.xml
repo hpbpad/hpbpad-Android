@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical" android:layout_width="match_parent"
+	android:layout_height="match_parent" android:background="@color/mp_bg">
+
+	<ListView android:id="@+id/template" android:layout_width="match_parent"
+		android:layout_height="match_parent" android:dividerHeight="4dp"
+		android:divider="@android:color/transparent" android:listSelector="@android:color/transparent" />
+	<WebView android:id="@+id/webview" android:layout_width="1024dp"
+		android:layout_height="0dp" />
+
+	<com.justsystems.hpb.pad.SlidingView
+		android:id="@+id/slidingDrawer1" android:layout_width="wrap_content"
+		android:layout_height="wrap_content" android:orientation="vertical"
+		android:background="#CC4B4848" android:padding="@dimen/startpage_slidingview_padding"
+		android:visibility="invisible">
+
+		<RelativeLayout android:layout_width="match_parent"
+			android:layout_height="0dp" android:layout_weight="1">
+			<android.support.v4.view.ViewPager
+				android:id="@+id/preview" android:layout_width="match_parent"
+				android:layout_height="match_parent" />
+			<ImageView android:id="@+id/type_left"
+				android:layout_width="@dimen/startpage_page_icon_width"
+				android:layout_height="@dimen/startpage_page_icon_height"
+				android:layout_margin="@dimen/startpage_page_icon_margin"
+				android:src="@drawable/ic_top_arrow_l"
+				android:layout_alignParentLeft="true" android:layout_centerVertical="true" />
+			<ImageView android:id="@+id/type_right"
+				android:layout_width="@dimen/startpage_page_icon_width"
+				android:layout_height="@dimen/startpage_page_icon_height"
+				android:layout_margin="@dimen/startpage_page_icon_margin"
+				android:src="@drawable/ic_top_arrow_r"
+				android:layout_alignParentRight="true"
+				android:layout_centerVertical="true" />
+		</RelativeLayout>
+
+		<android.support.v4.view.ViewPager
+			android:id="@+id/postType" android:layout_width="match_parent"
+			android:layout_height="62dp" android:layout_gravity="center_vertical" />
+
+		<RelativeLayout android:layout_width="match_parent"
+			android:layout_height="wrap_content">
+			<ImageView android:id="@+id/list" android:layout_width="74dp"
+				android:layout_height="@dimen/startpage_sub_icon_size"
+				android:layout_toLeftOf="@+id/newPost"
+				android:layout_centerVertical="true" android:src="@drawable/ic_top_article"
+				android:paddingRight="@dimen/startpage_icon_padding"
+				android:contentDescription="@string/post" />
+			<ImageView android:id="@+id/newPost" android:layout_width="124dp"
+				android:layout_height="@dimen/startpage_main_icon_size"
+				android:layout_centerVertical="true"
+				android:layout_centerHorizontal="true" android:src="@drawable/ic_top_post"
+				android:paddingRight="@dimen/startpage_icon_padding"
+				android:paddingLeft="@dimen/startpage_icon_padding"
+				android:contentDescription="@string/new_post" />
+			<ImageView android:id="@+id/quick_photo"
+				android:layout_width="74dp" android:layout_height="@dimen/startpage_sub_icon_size"
+				android:layout_toRightOf="@id/newPost"
+				android:layout_centerVertical="true" android:src="@drawable/ic_top_camera"
+				android:paddingLeft="@dimen/startpage_icon_padding"
+				android:contentDescription="@string/quick_photo" />
+		</RelativeLayout>
+
+		<ImageView android:id="@+id/handle" android:layout_width="match_parent"
+			android:layout_height="@dimen/startpage_handle_height"
+			android:paddingTop="27dp" android:paddingBottom="6dp"
+			android:src="@drawable/ic_top_arrow_up_not_pressed" />
+
+	</com.justsystems.hpb.pad.SlidingView>
+
+</FrameLayout>

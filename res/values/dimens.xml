@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<dimen name="comment_detail_font_size">16dp</dimen>
+	<dimen name="chart_width">320dp</dimen>
+	<dimen name="chart_height">240dp</dimen>
+	<dimen name="settings_padding">12dp</dimen>
+	<dimen name="format_bar_font_size">17dp</dimen>
+	<dimen name="format_bar_button_padding">4dp</dimen>
+	<dimen name="format_bar_height">40dp</dimen>
+	<dimen name="content_edit_padding">46dp</dimen>
+	<dimen name="menu_image_size">32dp</dimen>
+	<dimen name="menu_shadow_width">10dp</dimen>
+	<dimen name="add_account_width">-1dp</dimen>
+	<dimen name="refresh_icon_padding">12dp</dimen>
+
+	<!-- startpage -->
+	<dimen name="startpage_slidingview_padding">9dp</dimen>
+	<dimen name="startpage_main_icon_size">94dp</dimen>
+	<dimen name="startpage_sub_icon_size">59dp</dimen>
+	<dimen name="startpage_icon_padding">15dp</dimen>
+	<dimen name="startpage_handle_height">49dp</dimen>
+
+	<dimen name="startpage_page_icon_height">50dp</dimen>
+	<dimen name="startpage_page_icon_width">28dp</dimen>
+	<dimen name="startpage_page_icon_margin">3dp</dimen>
+
+	<dimen name="startpage_type_text_small">14sp</dimen>
+	<dimen name="startpage_type_text_large">19sp</dimen>
+
+	<dimen name="startpage_actionbar_margin">24sp</dimen>
+
+	<!-- Menu Drawer -->
+	<dimen name="menu_drawer_left">8dp</dimen>
+	<dimen name="menu_drawer_size">250dp</dimen>
+
+	<dimen name="graph_text_width">110dp</dimen>
+	<dimen name="graph_rate_width">40dp</dimen>
+</resources>

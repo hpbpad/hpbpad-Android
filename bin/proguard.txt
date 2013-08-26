@@ -1,0 +1,209 @@
+# view res/layout/new_start_page.xml #generated:20
+# view res/layout/new_start_page.xml #generated:38
+-keep class android.support.v4.view.ViewPager { <init>(...); }
+
+# view res/layout/abs__screen_action_bar.xml #generated:44
+# view res/layout/abs__screen_action_bar_overlay.xml #generated:27
+# view res/layout/abs__screen_simple.xml #generated:32
+# view res/layout/abs__screen_simple_overlay_action_mode.xml #generated:27
+# view xlarge\res/layout-xlarge/abs__screen_action_bar.xml #generated:44
+# view xlarge\res/layout-xlarge/abs__screen_action_bar_overlay.xml #generated:25
+-keep class com.actionbarsherlock.internal.nineoldandroids.widget.NineFrameLayout { <init>(...); }
+
+# view large\res/layout-large/abs__action_mode_close_item.xml #generated:17
+# view res/layout/abs__action_mode_close_item.xml #generated:17
+-keep class com.actionbarsherlock.internal.nineoldandroids.widget.NineLinearLayout { <init>(...); }
+
+# view res/layout/abs__action_menu_item_layout.xml #generated:17
+-keep class com.actionbarsherlock.internal.view.menu.ActionMenuItemView { <init>(...); }
+
+# view res/layout/abs__action_menu_layout.xml #generated:17
+-keep class com.actionbarsherlock.internal.view.menu.ActionMenuView { <init>(...); }
+
+# view res/layout/abs__popup_menu_item_layout.xml #generated:17
+-keep class com.actionbarsherlock.internal.view.menu.ListMenuItemView { <init>(...); }
+
+# view res/layout/abs__screen_action_bar.xml #generated:27
+# view res/layout/abs__screen_action_bar.xml #generated:51
+# view res/layout/abs__screen_action_bar_overlay.xml #generated:30
+# view res/layout/abs__screen_action_bar_overlay.xml #generated:53
+# view xlarge\res/layout-xlarge/abs__screen_action_bar.xml #generated:27
+# view xlarge\res/layout-xlarge/abs__screen_action_bar_overlay.xml #generated:28
+-keep class com.actionbarsherlock.internal.widget.ActionBarContainer { <init>(...); }
+
+# view res/layout/abs__action_mode_bar.xml #generated:19
+# view res/layout/abs__screen_action_bar.xml #generated:37
+# view res/layout/abs__screen_action_bar_overlay.xml #generated:41
+# view xlarge\res/layout-xlarge/abs__screen_action_bar.xml #generated:37
+# view xlarge\res/layout-xlarge/abs__screen_action_bar_overlay.xml #generated:38
+-keep class com.actionbarsherlock.internal.widget.ActionBarContextView { <init>(...); }
+
+# view res/layout/abs__screen_action_bar.xml #generated:32
+# view res/layout/abs__screen_action_bar_overlay.xml #generated:36
+# view xlarge\res/layout-xlarge/abs__screen_action_bar.xml #generated:32
+# view xlarge\res/layout-xlarge/abs__screen_action_bar_overlay.xml #generated:33
+-keep class com.actionbarsherlock.internal.widget.ActionBarView { <init>(...); }
+
+# view res/layout/abs__action_bar_home.xml #generated:17
+-keep class com.actionbarsherlock.internal.widget.ActionBarView$HomeView { <init>(...); }
+
+# view res/layout/abs__action_menu_item_layout.xml #generated:40
+-keep class com.actionbarsherlock.internal.widget.CapitalizingButton { <init>(...); }
+
+# view res/layout/abs__activity_chooser_view.xml #generated:19
+-keep class com.actionbarsherlock.internal.widget.IcsLinearLayout { <init>(...); }
+
+# view res/layout/blog_spinner.xml #generated:9
+-keep class com.actionbarsherlock.internal.widget.IcsSpinner { <init>(...); }
+
+# view res/layout/abs__action_bar_tab.xml #generated:3
+-keep class com.actionbarsherlock.internal.widget.ScrollingTabContainerView$TabView { <init>(...); }
+
+# view res/layout/abs__action_bar_tab_bar_view.xml #generated:3
+-keep class com.actionbarsherlock.internal.widget.TabsLinearLayout { <init>(...); }
+
+# view res/layout/abs__search_view.xml #generated:84
+-keep class com.actionbarsherlock.widget.SearchView$SearchAutoComplete { <init>(...); }
+
+# view res/layout/new_start_page.xml #generated:12
+-keep class com.justsystems.hpb.pad.SlidingView { <init>(...); }
+
+# view AndroidManifest.xml #generated:93
+-keep class com.justsystems.hpb.pad.StartPageActivity { <init>(...); }
+
+# view res/layout/mp_item.xml #generated:2
+-keep class com.justsystems.hpb.pad.TemplateView { <init>(...); }
+
+# view res/layout/seo_main.xml #generated:10
+-keep class com.justsystems.hpb.pad.seo.GraphView { <init>(...); }
+
+# view AndroidManifest.xml #generated:120
+-keep class com.justsystems.hpb.pad.seo.SeoResultActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:151
+-keep class org.wordpress.android.CommentBroadcastReceiver { <init>(...); }
+
+# view AndroidManifest.xml #generated:33
+-keep class org.wordpress.android.WordPress { <init>(...); }
+
+# view AndroidManifest.xml #generated:125
+-keep class org.wordpress.android.ui.AddQuickPressShortcutActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:133
+-keep class org.wordpress.android.ui.DashboardActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:138
+-keep class org.wordpress.android.ui.StatsActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:141
+-keep class org.wordpress.android.ui.ViewSiteActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:38
+-keep class org.wordpress.android.ui.accounts.AddAccountActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:41
+-keep class org.wordpress.android.ui.accounts.AddAcountSettingsActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:43
+-keep class org.wordpress.android.ui.accounts.NewAccountActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:44
+-keep class org.wordpress.android.ui.accounts.SignupActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:62
+-keep class org.wordpress.android.ui.comments.AddCommentActivity { <init>(...); }
+
+# view large-mdpi\res/layout-large-mdpi/comments.xml #generated:18
+# view sw720dp\res/layout-sw720dp/comments.xml #generated:18
+-keep class org.wordpress.android.ui.comments.CommentFragment { <init>(...); }
+
+# view AndroidManifest.xml #generated:57
+-keep class org.wordpress.android.ui.comments.CommentsActivity { <init>(...); }
+
+# view large-mdpi\res/layout-large-mdpi/comments.xml #generated:11
+# view res/layout/comments.xml #generated:9
+# view sw720dp\res/layout-sw720dp/comments.xml #generated:11
+-keep class org.wordpress.android.ui.comments.CommentsListFragment { <init>(...); }
+
+# view AndroidManifest.xml #generated:60
+-keep class org.wordpress.android.ui.comments.EditCommentActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:108
+-keep class org.wordpress.android.ui.list.CustomPostTypePostsActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:105
+-keep class org.wordpress.android.ui.list.PagesActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:102
+-keep class org.wordpress.android.ui.list.PostsActivity { <init>(...); }
+
+# view large-mdpi\res/layout-large-mdpi/posts.xml #generated:11
+# view res/layout/posts.xml #generated:9
+# view sw720dp\res/layout-sw720dp/posts.xml #generated:11
+-keep class org.wordpress.android.ui.list.ViewPostsFragment { <init>(...); }
+
+# view AndroidManifest.xml #generated:66
+-keep class org.wordpress.android.ui.posts.AddCategoryActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:69
+-keep class org.wordpress.android.ui.posts.AddTermActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:89
+-keep class org.wordpress.android.ui.posts.EditCustomTypePostActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:72
+-keep class org.wordpress.android.ui.posts.EditLinkActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:74
+-keep class org.wordpress.android.ui.posts.EditPostActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:111
+-keep class org.wordpress.android.ui.posts.PreviewPostActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:114
+-keep class org.wordpress.android.ui.posts.SelectCategoriesActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:116
+-keep class org.wordpress.android.ui.posts.SelectTermsActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:118
+-keep class org.wordpress.android.ui.posts.ViewPostActivity { <init>(...); }
+
+# view large-mdpi\res/layout-large-mdpi/posts.xml #generated:18
+# view sw720dp\res/layout-sw720dp/posts.xml #generated:18
+-keep class org.wordpress.android.ui.posts.ViewPostFragment { <init>(...); }
+
+# view AndroidManifest.xml #generated:48
+-keep class org.wordpress.android.ui.prefs.AboutActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:49
+-keep class org.wordpress.android.ui.prefs.BlogPreferencesActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:52
+-keep class org.wordpress.android.ui.prefs.LicensesActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:53
+-keep class org.wordpress.android.ui.prefs.PreferencesActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:136
+-keep class org.wordpress.android.ui.reader.ReaderActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:148
+-keep class org.wordpress.android.util.CommentService { <init>(...); }
+
+# view AndroidManifest.xml #generated:146
+-keep class org.wordpress.android.util.PostUploadService { <init>(...); }
+
+# view res/layout/edit.xml #generated:22
+-keep class org.wordpress.android.util.WPEditText { <init>(...); }
+
+# view res/layout/reader_wpcom_pager.xml #generated:7
+-keep class org.wordpress.android.util.WPViewPager { <init>(...); }
+
+# onClick res/layout/about.xml #generated:45
+# onClick res/layout/list_footer_btn.xml #generated:2
+-keepclassmembers class * { *** onClick(...); }
+
+# onClick res/layout/blog_preferences.xml #generated:93
+-keepclassmembers class * { *** removeBlog(...); }
+

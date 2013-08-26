@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent" android:layout_height="match_parent">
+	<LinearLayout android:orientation="vertical"
+		android:layout_width="match_parent" android:layout_height="wrap_content">
+
+		<TextView android:id="@+id/keyword_title"
+			android:layout_width="match_parent" android:layout_height="wrap_content"
+			android:text="@string/kwd_constitution" style="@style/SeoTitle" />
+		<com.justsystems.hpb.pad.seo.GraphView
+			android:id="@+id/keyword_graph" android:layout_width="match_parent"
+			android:layout_height="150dp" style="@style/SeoDesc" />
+
+		<TextView android:id="@+id/page_summary"
+			android:layout_width="match_parent" android:layout_height="wrap_content"
+			style="@style/SeoTitle" />
+		<TextView android:id="@+id/page_description"
+			android:layout_width="match_parent" android:layout_height="wrap_content"
+			android:text="ああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああ"
+			style="@style/SeoDesc" />
+
+		<TextView android:id="@+id/title_summary"
+			android:layout_width="match_parent" android:layout_height="wrap_content"
+			style="@style/SeoTitle" />
+		<TextView android:id="@+id/title_description"
+			android:layout_width="match_parent" android:layout_height="wrap_content"
+			android:text="ほげほげ" style="@style/SeoDesc" />
+
+		<TextView android:id="@+id/description_summary"
+			android:layout_width="match_parent" android:layout_height="wrap_content"
+			style="@style/SeoTitle" />
+		<TextView android:id="@+id/description_description"
+			android:layout_width="match_parent" android:layout_height="wrap_content"
+			android:text="うんぬんかんぬん" style="@style/SeoDesc" />
+
+		<TextView android:id="@+id/meta_keyword_summary"
+			android:layout_width="match_parent" android:layout_height="wrap_content"
+			style="@style/SeoTitle" />
+		<TextView android:id="@+id/meta_keyword_description"
+			android:layout_width="match_parent" android:layout_height="wrap_content"
+			android:text="なんたらかんたら" style="@style/SeoDesc" />
+
+	</LinearLayout>
+</ScrollView>

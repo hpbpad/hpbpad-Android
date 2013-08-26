@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+	package="com.justsystems.hpb.pad" android:installLocation="auto"
+	android:versionCode="1" android:versionName="1.0.0">
+
+	<uses-sdk android:minSdkVersion="9" android:targetSdkVersion="17" />
+
+	<supports-screens android:anyDensity="true"
+		android:largeScreens="true" android:normalScreens="true"
+		android:smallScreens="true" />
+
+	<uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.CAMERA" />
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+	<uses-permission android:name="android.permission.VIBRATE" />
+	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+	<uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
+	<uses-permission android:name="com.android.launcher.permission.UNINSTALL_SHORTCUT" />
+
+	<uses-feature android:name="android.hardware.camera"
+		android:required="false" />
+	<uses-feature android:name="android.hardware.location"
+		android:required="false" />
+	<uses-feature android:name="android.hardware.location.gps"
+		android:required="false" />
+	<uses-feature android:name="android.hardware.location.network"
+		android:required="false" />
+	<uses-feature android:name="android.hardware.touchscreen"
+		android:required="false" />
+
+	<application android:name="org.wordpress.android.WordPress"
+		android:allowBackup="false" android:hardwareAccelerated="true"
+		android:icon="@drawable/ic_app" android:label="hpb pad" android:theme="@style/WordPress">
+
+		<!-- Account activities -->
+		<activity android:name="org.wordpress.android.ui.accounts.AddAccountActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize"
+			android:windowSoftInputMode="adjustResize" />
+		<activity
+			android:name="org.wordpress.android.ui.accounts.AddAcountSettingsActivity" />
+		<activity android:name="org.wordpress.android.ui.accounts.NewAccountActivity" />
+		<activity android:name="org.wordpress.android.ui.accounts.SignupActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize" />
+
+		<!-- Preferences activities -->
+		<activity android:name="org.wordpress.android.ui.prefs.AboutActivity" />
+		<activity android:name="org.wordpress.android.ui.prefs.BlogPreferencesActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize"
+			android:windowSoftInputMode="stateHidden" />
+		<activity android:name="org.wordpress.android.ui.prefs.LicensesActivity" />
+		<activity android:name="org.wordpress.android.ui.prefs.PreferencesActivity"
+			android:windowSoftInputMode="stateHidden" />
+
+		<!-- Comments activities -->
+		<activity android:name="org.wordpress.android.ui.comments.CommentsActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize"
+			android:theme="@style/WordPressHomeAsUpCustomized" />
+		<activity android:name="org.wordpress.android.ui.comments.EditCommentActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize" />
+		<activity android:name="org.wordpress.android.ui.comments.AddCommentActivity"
+			android:theme="@style/WordPress.Dialog" android:windowSoftInputMode="stateVisible" />
+
+		<!-- Posts activities -->
+		<activity android:name="org.wordpress.android.ui.posts.AddCategoryActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize"
+			android:label="@string/add_new_category" android:theme="@style/WordPress.Dialog" />
+		<activity android:name="org.wordpress.android.ui.posts.AddTermActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize"
+			android:label="@string/add_new_category" android:theme="@style/WordPress.Dialog" />
+		<activity android:name="org.wordpress.android.ui.posts.EditLinkActivity"
+			android:label="@string/create_a_link" android:theme="@style/WordPress.Dialog" />
+		<activity android:name="org.wordpress.android.ui.posts.EditPostActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize"
+			android:windowSoftInputMode="stateHidden|adjustResize">
+			<intent-filter>
+				<action android:name="android.intent.action.SEND" />
+				<action android:name="android.intent.action.SEND_MULTIPLE" />
+
+				<category android:name="android.intent.category.DEFAULT" />
+
+				<data android:mimeType="text/plain" />
+				<data android:mimeType="image/*" />
+				<data android:mimeType="video/*" />
+			</intent-filter>
+		</activity>
+
+		<activity android:name="org.wordpress.android.ui.posts.EditCustomTypePostActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize"
+			android:windowSoftInputMode="stateHidden|adjustResize" />
+
+		<activity android:name="com.justsystems.hpb.pad.StartPageActivity"
+			android:theme="@style/WordPressNoTitle" android:configChanges="orientation|keyboardHidden|screenSize">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity>
+
+		<activity android:name="org.wordpress.android.ui.list.PostsActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize"
+			android:theme="@style/WordPressHomeAsUpCustomized" />
+		<activity android:name="org.wordpress.android.ui.list.PagesActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize"
+			android:theme="@style/WordPressHomeAsUpCustomized" />
+		<activity android:name="org.wordpress.android.ui.list.CustomPostTypePostsActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize"
+			android:theme="@style/WordPressHomeAsUpCustomized" />
+		<activity android:name="org.wordpress.android.ui.posts.PreviewPostActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize"
+			android:theme="@style/WordPressHomeAsUpCustomized" />
+		<activity android:name="org.wordpress.android.ui.posts.SelectCategoriesActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize" />
+		<activity android:name="org.wordpress.android.ui.posts.SelectTermsActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize" />
+		<activity android:name="org.wordpress.android.ui.posts.ViewPostActivity" />
+
+		<activity android:name="com.justsystems.hpb.pad.seo.SeoResultActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize" />
+
+
+		<!-- Other activities -->
+		<activity android:name="org.wordpress.android.ui.AddQuickPressShortcutActivity"
+			android:label="QuickPress">
+			<intent-filter>
+				<action android:name="android.intent.action.CREATE_SHORTCUT" />
+
+				<category android:name="android.intent.category.DEFAULT" />
+			</intent-filter>
+		</activity>
+		<activity android:name="org.wordpress.android.ui.DashboardActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize"
+			android:theme="@style/WordPressHomeAsUpCustomized" />
+		<activity android:name="org.wordpress.android.ui.reader.ReaderActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize" />
+		<activity android:name="org.wordpress.android.ui.StatsActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize"
+			android:theme="@style/WordPressHomeAsUpCustomized" />
+		<activity android:name="org.wordpress.android.ui.ViewSiteActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize"
+			android:theme="@style/WordPressHomeAsUpCustomized" />
+
+		<!-- Services -->
+		<service android:name="org.wordpress.android.util.PostUploadService"
+			android:label="Post Upload Service" />
+		<service android:name="org.wordpress.android.util.CommentService"
+			android:label="Comment Service" />
+
+		<receiver android:name="org.wordpress.android.CommentBroadcastReceiver" />
+	</application>
+
+</manifest>

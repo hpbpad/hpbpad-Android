@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<color name="image_options_label">#CCCCCC</color>
+	<color name="image_options_text">#FFFFFF</color>
+	<!-- <color name="pressed_wordpress">#CC2EA2CC</color> -->
+	<color name="pressed_wordpress">#EA3B91</color>
+	<color name="list_row_bg">#F7F7F7</color>
+
+	<!-- Colors for menu drawer. -->
+	<color name="md__comment_background">#EA3B91</color>
+	<color name="md__iconTintColor">#DDFFFFFF</color>
+	<color name="md__shadowColor">#44000000</color>
+	<color name="md__shadow">#252424</color>
+
+	<color name="default_pressed">#EA3B91</color>
+	<color name="default_selected">#86586E</color>
+	<color name="default_focused">#FF0000</color>
+
+	<!-- MenuDrawer -->
+	<color name="md_button_pressed">#EA3B91</color>
+	<color name="md_list_selected">#1a1919</color>
+	<color name="md_bg_color">#312f2f</color>
+	<color name="md_bg_gradation_start">#2e2c2c</color>
+	<color name="md_bg_gradation_end">#1a1919</color>
+
+	<!-- ActionBar -->
+	<color name="actionbar_bg">#4B4848</color>
+
+	<!-- AddAcount -->
+	<color name="account_bg">#4B4848</color>
+	<color name="account_button_bg">#E84091</color>
+	<color name="account_button_shadow">#D0000000</color>
+
+
+	<!-- MarketPlace -->
+	<color name="mp_bg">#F8F8F8</color>
+
+</resources>

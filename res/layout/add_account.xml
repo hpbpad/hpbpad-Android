@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent" android:layout_height="fill_parent"
+	android:background="@color/account_bg">
+
+	<LinearLayout android:layout_width="@dimen/add_account_width"
+		android:layout_height="wrap_content" android:layout_gravity="top|center_horizontal"
+		android:gravity="center_horizontal" android:orientation="vertical"
+		android:paddingLeft="55dp" android:paddingRight="55dp">
+
+		<ImageView android:id="@+id/wpcomLogo"
+			android:layout_marginTop="16dp" android:layout_width="fill_parent"
+			android:layout_height="wrap_content" android:scaleType="centerInside"
+			android:src="@drawable/ic_login" />
+
+		<LinearLayout android:id="@+id/section1"
+			android:layout_width="match_parent" android:layout_height="wrap_content"
+			android:orientation="vertical">
+
+			<TextView android:id="@+id/l_section1" style="@style/WordPressSectionHeader"
+				android:layout_width="fill_parent" android:layout_height="wrap_content"
+				android:text="@string/account_details" />
+
+			<EditText android:id="@+id/url" android:layout_width="fill_parent"
+				android:layout_height="wrap_content" android:hint="@string/add_account_blog_url"
+				android:inputType="textUri" android:background="@drawable/simple_textbox_bg"
+				android:layout_marginBottom="13dp" />
+
+			<EditText android:id="@+id/username" android:layout_width="fill_parent"
+				android:layout_height="wrap_content" android:hint="@string/username"
+				android:singleLine="true" android:background="@drawable/simple_textbox_bg"
+				android:layout_marginBottom="13dp" />
+
+			<EditText android:id="@+id/password" android:layout_width="fill_parent"
+				android:layout_height="wrap_content" android:layout_marginBottom="10dp"
+				android:hint="@string/password" android:inputType="textPassword"
+				android:singleLine="true" android:background="@drawable/simple_textbox_bg" />
+		</LinearLayout>
+
+		<Button android:id="@+id/settingsButton" android:layout_width="wrap_content"
+			android:layout_height="wrap_content" android:textColor="@android:color/white"
+			android:background="@drawable/login_button_bg" android:text="@string/optional_settings"
+			android:layout_marginBottom="13dp" />
+
+		<Button android:id="@+id/save" android:layout_width="wrap_content"
+			android:layout_height="wrap_content" android:minWidth="102dp"
+			android:textColor="@android:color/white" android:text="@string/log_in"
+			android:background="@drawable/login_button_bg" />
+	</LinearLayout>
+
+</ScrollView>
