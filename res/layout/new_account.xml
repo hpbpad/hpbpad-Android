@@ -1,0 +1,25 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+	android:id="@+id/main" android:layout_width="fill_parent"
+	android:layout_height="fill_parent" android:background="@color/account_bg">
+	<LinearLayout android:id="@+id/LinearLayout01"
+		android:layout_width="fill_parent" android:layout_height="wrap_content"
+		android:gravity="center_horizontal" android:orientation="vertical"
+		style="@style/WordPressWelcomeStyle">
+		<ImageView android:scaleType="centerInside"
+			android:layout_width="212dp" android:layout_height="162dp"
+			android:paddingBottom="50dp" android:id="@+id/wordpress_logo"
+			android:src="@drawable/ic_login" />
+
+		<Button android:id="@+id/dotorgExisting" android:layout_width="280dp"
+			android:layout_height="wrap_content" android:textSize="14sp"
+			android:textColor="@android:color/white" android:shadowRadius="1"
+			android:textStyle="bold" android:text="@string/login_myblog"
+			android:background="@drawable/login_button_bg"
+			android:layout_marginBottom="13dp" />
+		<Button android:id="@+id/dotcomExisting" android:layout_width="280dp"
+			android:layout_height="wrap_content" android:textSize="14sp"
+			android:textColor="@android:color/white" android:textStyle="bold"
+			android:text="@string/login_wpdotcom" android:background="@drawable/login_button_bg" />
+
+	</LinearLayout>
+</ScrollView>

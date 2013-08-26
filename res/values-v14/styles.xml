@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+	<style name="WordPress" parent="Theme.Sherlock.Light.DarkActionBar">
+		<item name="android:textViewStyle">@style/WordPressTextAppearance</item>
+		<item name="android:buttonStyle">@style/WordPressButtonAppearance</item>
+		<item name="android:editTextStyle">@style/WordPressEditTextStyle</item>
+		<item name="android:checkboxStyle">@style/WordPressCheckBoxStyle</item>
+
+		<item name="android:actionBarItemBackground">@drawable/selectable_background_wordpress</item>
+		<item name="actionBarItemBackground">@drawable/selectable_background_wordpress</item>
+
+		<item name="android:popupMenuStyle">@style/wordpress_PopupMenu</item>
+		<item name="popupMenuStyle">@style/wordpress_PopupMenu</item>
+
+		<item name="android:dropDownListViewStyle">@style/wordpress_DropDownListView</item>
+		<item name="dropDownListViewStyle">@style/wordpress_DropDownListView</item>
+
+		<item name="android:actionBarTabStyle">@style/wordpress_ActionBarTabStyle</item>
+		<item name="actionBarTabStyle">@style/wordpress_ActionBarTabStyle</item>
+
+		<item name="android:actionDropDownStyle">@style/wordpress_DropDownNav</item>
+		<item name="actionDropDownStyle">@style/wordpress_DropDownNav</item>
+
+		<item name="android:actionBarStyle">@style/wordpress_solid_ActionBar</item>
+		<item name="actionBarStyle">@style/wordpress_solid_ActionBar</item>
+
+		<item name="android:panelBackground">@drawable/menu_hardkey_panel_wordpress</item>
+		<!-- Light.DarkActionBar specific -->
+		<item name="android:actionBarWidgetTheme">@style/Theme.wordpress.widget</item>
+		<item name="actionBarWidgetTheme">@style/Theme.wordpress.widget</item>
+
+		<item name="menuDrawerStyle">@style/MenuDrawer</item>
+
+		<item name="android:activatedBackgroundIndicator">@drawable/list_bg_selector</item>
+		<item name="activatedBackgroundIndicator">@drawable/list_bg_selector</item>
+	</style>
+
+	<style name="wordpress_solid_ActionBar" parent="Widget.Sherlock.Light.ActionBar.Solid.Inverse">
+		<item name="android:icon">@drawable/ic_actionbar_main</item>
+		<item name="icon">@drawable/ic_actionbar_main</item>
+		<item name="android:background">@color/actionbar_bg</item>
+		<item name="background">@color/actionbar_bg</item>
+
+		<item name="android:backgroundStacked">@drawable/ab_stacked_solid_wordpress</item>
+		<item name="backgroundStacked">@drawable/ab_stacked_solid_wordpress</item>
+
+		<item name="android:backgroundSplit">@drawable/ab_bottom_solid_wordpress</item>
+		<item name="backgroundSplit">@drawable/ab_bottom_solid_wordpress</item>
+
+		<item name="android:progressBarStyle">@style/wordpress_ProgressBar</item>
+		<item name="progressBarStyle">@style/wordpress_ProgressBar</item>
+	</style>
+
+</resources>

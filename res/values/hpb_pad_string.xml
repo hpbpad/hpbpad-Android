@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="kwd_constitution">キーワード構成</string>
+	<string name="page_text_count">ページの文字数: %1$d文字</string>
+	<string name="title_text_count">見出し: %1$d文字</string>
+	<string name="meta_desc_text_count">メタディスクリプション: %1$d文字</string>
+	<string name="meta_kwd_text_count">メタキーワード: %1$d文字</string>
+	<string name="seo_check">SEOチェック</string>
+	<string name="post_seo">投稿SEO</string>
+	<string name="seo_disc">投稿のSEOチェック</string>
+
+	<string name="market_place">マーケットプレイス</string>
+
+	<string name="login_myblog">自分で開設した WordPress ブログにログイン</string>
+	<string name="login_wpdotcom">WordPress.com で開設したブログにログイン</string>
+</resources>
