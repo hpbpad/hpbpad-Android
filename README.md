@@ -13,12 +13,12 @@
 <http://actionbarsherlock.com/>  
 ダウンロードページ  
 <http://actionbarsherlock.com/download.html>  
-hpbpadではversion4.2.0を利用しています。
+hpbpadではversion4.4.0を利用しています。
 
 ・Android MenuDrawer  
 <https://github.com/SimonVT/android-menudrawer>  
 <https://github.com/SimonVT/android-menudrawer/tree/master/menudrawer>  
-hpbpadではversion2.0.3を利用しています。
+hpbpadではversion3.0.2を利用しています。
 
 各バージョン情報はhpbpad1.1.0現在になります。
 
