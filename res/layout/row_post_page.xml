@@ -1,7 +1,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	android:id="@+id/row_post_root" android:layout_width="fill_parent"
 	android:layout_height="fill_parent" android:orientation="vertical"
-	android:paddingLeft="18dp" android:paddingRight="18dp"
+	android:paddingLeft="16dp" android:paddingRight="16dp"
 	android:paddingTop="8dp" android:paddingBottom="8dp"
 	style="@style/WordPressListRowBackground">
 

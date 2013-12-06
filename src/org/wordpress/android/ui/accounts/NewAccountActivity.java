@@ -22,7 +22,7 @@ public class NewAccountActivity extends Activity {
         dotComButton.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
                 Intent i = new Intent(NewAccountActivity.this,
-                        AddAccountActivity.class);
+                        AccountSetupActivity.class);
                 i.putExtra("wpcom", true);
                 startActivityForResult(i, EXISTING_COM_ACCOUNT_REQUEST);
             }
@@ -32,7 +32,7 @@ public class NewAccountActivity extends Activity {
         dotOrgButton.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
                 Intent i = new Intent(NewAccountActivity.this,
-                        AddAccountActivity.class);
+                        AccountSetupActivity.class);
                 startActivityForResult(i, EXISTING_ORG_ACCOUNT_REQUEST);
             }
         });
@@ -48,7 +48,7 @@ public class NewAccountActivity extends Activity {
                 String username = data.getStringExtra("username");
                 if (username != null) {
                     Intent i = new Intent(NewAccountActivity.this,
-                            AddAccountActivity.class);
+                            AccountSetupActivity.class);
                     i.putExtra("wpcom", true);
                     i.putExtra("username", username);
                     startActivityForResult(i, EXISTING_COM_ACCOUNT_REQUEST);

@@ -3,6 +3,7 @@ package org.wordpress.android;
 import java.lang.ref.WeakReference;
 import java.text.StringCharacterIterator;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -27,8 +28,9 @@ import android.preference.PreferenceManager;
 import android.util.Base64;
 import android.util.Log;
 
+import com.justsystems.hpb.pad.marketplace.Template;
+
 import org.json.JSONArray;
-import org.json.JSONException;
 
 import org.wordpress.android.models.CustomField;
 import org.wordpress.android.models.CustomTypePost;
@@ -37,11 +39,14 @@ import org.wordpress.android.models.MediaFile;
 import org.wordpress.android.models.Post;
 import org.wordpress.android.models.Term;
 import org.wordpress.android.ui.MenuDrawerItem;
+import org.wordpress.android.ui.WPActionBarActivity;
+import org.wordpress.android.ui.WPActionBarActivity.CustomMenuItem;
 import org.wordpress.android.ui.posts.EditPostActivity;
+import org.wordpress.android.util.Utils;
 
 public class WordPressDB {
 
-    private static final int DATABASE_VERSION = 16;
+    private static final int DATABASE_VERSION = 18;
 
     private static final String CREATE_TABLE_SETTINGS = "create table if not exists accounts (id integer primary key autoincrement, "
             + "url text, blogName text, username text, password text, imagePlacement text, centerThumbnail boolean, fullSizeImage boolean, maxImageWidth text, maxImageWidthId integer, lastCommentId integer, runService boolean);";
@@ -79,12 +84,16 @@ public class WordPressDB {
             + "slug text default '', term_group text default '', term_taxonomy_id text default '', taxonomy text default '', description text default '', parent text default '', count integer );";
 
     private static final String CREATE_TABLE_COMMENTS = "create table if not exists comments (blogID text, postID text, iCommentID integer, author text, comment text, commentDate text, commentDateFormatted text, status text, url text, email text, postTitle text);";
+
+    private static final String CREATE_TABLE_TEMPLATES = "create table if not exists templates ( id integer primary key, position integer, link text, thumbnail text, time date );";
+
     private static final String POSTS_TABLE = "posts";
     private static final String CUSTOM_TYPE_POSTS_TABLE = "custom_type_posts";
     private static final String TYPES_TABLE = "types";
     private static final String TAXONOMY_TABLE = "taxonomy";
     private static final String TERM_TABLE = "term";
     private static final String COMMENTS_TABLE = "comments";
+    private static final String TEMPLATE_TABLE = "templates";
 
     // eula
     private static final String EULA_TABLE = "eula";
@@ -154,9 +163,12 @@ public class WordPressDB {
 
     private static final String ADD_BLOG_OPTIONS = "alter table accounts add blog_options text default '';";
 
+    // add category parent id to keep track of category hierarchy
+    private static final String ADD_PARENTID_IN_CATEGORIES = "alter table cats add parent_id integer default 0;";
+
     private SQLiteDatabase db;
 
-    protected static final String PASSWORD_SECRET = "nottherealpasscode";
+    protected static final String PASSWORD_SECRET = Config.DB_SECRET;
 
     public String defaultBlog = "";
 
@@ -187,6 +199,7 @@ public class WordPressDB {
         db.execSQL(CREATE_TABLE_CUSTOM_TYPE_POSTS);
         db.execSQL(CREATE_TABLE_TAXONOMY);
         db.execSQL(CREATE_TABLE_TERM);
+        db.execSQL(CREATE_TABLE_TEMPLATES);
 
         try {
             if (db.getVersion() < 1) { // user is new install
@@ -215,6 +228,7 @@ public class WordPressDB {
                 db.execSQL(ADD_FEATURED_IN_POST);
                 db.execSQL(ADD_HOME_URL);
                 db.execSQL(ADD_BLOG_OPTIONS);
+                db.execSQL(ADD_PARENTID_IN_CATEGORIES);
                 migratePasswords();
                 db.setVersion(DATABASE_VERSION); // set to latest revision
             } else if (db.getVersion() == 1) { // v1.0 or v1.0.1
@@ -247,8 +261,10 @@ public class WordPressDB {
                 db.execSQL(ADD_FEATURED_IN_POST);
                 db.execSQL(ADD_HOME_URL);
                 db.execSQL(ADD_BLOG_OPTIONS);
+                db.execSQL(ADD_PARENTID_IN_CATEGORIES);
                 migratePasswords();
                 migratePreferences(ctx);
+                migrateWPComAccount();
                 db.setVersion(DATABASE_VERSION);
             } else if (db.getVersion() == 2) {
                 db.delete(POSTS_TABLE, null, null);
@@ -278,8 +294,10 @@ public class WordPressDB {
                 db.execSQL(ADD_FEATURED_IN_POST);
                 db.execSQL(ADD_HOME_URL);
                 db.execSQL(ADD_BLOG_OPTIONS);
+                db.execSQL(ADD_PARENTID_IN_CATEGORIES);
                 migratePasswords();
                 migratePreferences(ctx);
+                migrateWPComAccount();
                 db.setVersion(DATABASE_VERSION);
             } else if (db.getVersion() == 3) {
                 db.delete(POSTS_TABLE, null, null);
@@ -306,8 +324,10 @@ public class WordPressDB {
                 db.execSQL(ADD_FEATURED_IN_POST);
                 db.execSQL(ADD_HOME_URL);
                 db.execSQL(ADD_BLOG_OPTIONS);
+                db.execSQL(ADD_PARENTID_IN_CATEGORIES);
                 migratePasswords();
                 migratePreferences(ctx);
+                migrateWPComAccount();
                 db.setVersion(DATABASE_VERSION);
             } else if (db.getVersion() == 4) {
                 db.delete(POSTS_TABLE, null, null);
@@ -334,8 +354,10 @@ public class WordPressDB {
                 db.execSQL(ADD_FEATURED_IN_POST);
                 db.execSQL(ADD_HOME_URL);
                 db.execSQL(ADD_BLOG_OPTIONS);
+                db.execSQL(ADD_PARENTID_IN_CATEGORIES);
                 migratePasswords();
                 migratePreferences(ctx);
+                migrateWPComAccount();
                 db.setVersion(DATABASE_VERSION);
             } else if (db.getVersion() == 5) {
                 db.delete(POSTS_TABLE, null, null);
@@ -363,6 +385,7 @@ public class WordPressDB {
                 db.execSQL(ADD_BLOG_OPTIONS);
                 migratePasswords();
                 migratePreferences(ctx);
+                migrateWPComAccount();
                 db.setVersion(DATABASE_VERSION);
             } else if (db.getVersion() == 6) {
                 db.delete(POSTS_TABLE, null, null);
@@ -386,8 +409,10 @@ public class WordPressDB {
                 db.execSQL(ADD_FEATURED_IN_POST);
                 db.execSQL(ADD_HOME_URL);
                 db.execSQL(ADD_BLOG_OPTIONS);
+                db.execSQL(ADD_PARENTID_IN_CATEGORIES);
                 migratePasswords();
                 migratePreferences(ctx);
+                migrateWPComAccount();
                 db.setVersion(DATABASE_VERSION);
             } else if (db.getVersion() == 7) {
                 db.delete(POSTS_TABLE, null, null);
@@ -403,8 +428,10 @@ public class WordPressDB {
                 db.execSQL(ADD_FEATURED_IN_POST);
                 db.execSQL(ADD_HOME_URL);
                 db.execSQL(ADD_BLOG_OPTIONS);
+                db.execSQL(ADD_PARENTID_IN_CATEGORIES);
                 migratePasswords();
                 migratePreferences(ctx);
+                migrateWPComAccount();
                 db.setVersion(DATABASE_VERSION);
             } else if (db.getVersion() == 8) {
                 db.delete(POSTS_TABLE, null, null);
@@ -419,8 +446,10 @@ public class WordPressDB {
                 db.execSQL(ADD_FEATURED_IN_POST);
                 db.execSQL(ADD_HOME_URL);
                 db.execSQL(ADD_BLOG_OPTIONS);
+                db.execSQL(ADD_PARENTID_IN_CATEGORIES);
                 migratePasswords();
                 migratePreferences(ctx);
+                migrateWPComAccount();
                 db.setVersion(DATABASE_VERSION);
             } else if (db.getVersion() == 9) {
                 db.delete(POSTS_TABLE, null, null);
@@ -435,8 +464,10 @@ public class WordPressDB {
                 db.execSQL(ADD_FEATURED_IN_POST);
                 db.execSQL(ADD_HOME_URL);
                 db.execSQL(ADD_BLOG_OPTIONS);
+                db.execSQL(ADD_PARENTID_IN_CATEGORIES);
                 migratePasswords();
                 migratePreferences(ctx);
+                migrateWPComAccount();
                 db.setVersion(DATABASE_VERSION);
             } else if (db.getVersion() == 10) {
                 db.delete(POSTS_TABLE, null, null);
@@ -456,7 +487,7 @@ public class WordPressDB {
                     for (int i = 0; i < numRows; ++i) {
                         if (c.getString(0) != null) {
                             Post post = new Post(c.getInt(0), c.getString(1),
-                                    c.getString(2), c.getString(3),
+                                    c.getString(2), "", c.getString(3),
                                     c.getLong(4), c.getString(5),
                                     c.getString(6), c.getString(7),
                                     c.getString(8), c.getDouble(9),
@@ -482,7 +513,7 @@ public class WordPressDB {
                     for (int i = 0; i < numRows; ++i) {
                         if (c.getString(0) != null) {
                             Post post = new Post(c.getInt(0), c.getString(1),
-                                    c.getString(2), c.getString(3),
+                                    c.getString(2), "", c.getString(3),
                                     c.getLong(4), c.getString(5), "", "",
                                     c.getString(6), 0, 0, true, "", false,
                                     false);
@@ -507,7 +538,9 @@ public class WordPressDB {
                 db.execSQL(ADD_FEATURED_IN_POST);
                 db.execSQL(ADD_HOME_URL);
                 db.execSQL(ADD_BLOG_OPTIONS);
+                db.execSQL(ADD_PARENTID_IN_CATEGORIES);
                 migratePreferences(ctx);
+                migrateWPComAccount();
                 db.setVersion(DATABASE_VERSION);
             } else if (db.getVersion() == 11) {
                 db.execSQL(ADD_SCALED_IMAGE);
@@ -516,25 +549,42 @@ public class WordPressDB {
                 db.execSQL(ADD_FEATURED_IN_POST);
                 db.execSQL(ADD_HOME_URL);
                 db.execSQL(ADD_BLOG_OPTIONS);
+                db.execSQL(ADD_PARENTID_IN_CATEGORIES);
                 migratePreferences(ctx);
+                migrateWPComAccount();
                 db.setVersion(DATABASE_VERSION);
             } else if (db.getVersion() == 12) {
                 db.execSQL(ADD_FEATURED_IN_POST);
                 db.execSQL(ADD_HOME_URL);
                 db.execSQL(ADD_BLOG_OPTIONS);
+                db.execSQL(ADD_PARENTID_IN_CATEGORIES);
                 migratePreferences(ctx);
+                migrateWPComAccount();
                 db.setVersion(DATABASE_VERSION);
             } else if (db.getVersion() == 13) {
                 db.execSQL(ADD_HOME_URL);
                 db.execSQL(ADD_BLOG_OPTIONS);
+                db.execSQL(ADD_PARENTID_IN_CATEGORIES);
                 migratePreferences(ctx);
+                migrateWPComAccount();
                 db.setVersion(DATABASE_VERSION);
             } else if (db.getVersion() == 14) {
                 db.execSQL(ADD_BLOG_OPTIONS);
+                db.execSQL(ADD_PARENTID_IN_CATEGORIES);
                 migratePreferences(ctx);
+                migrateWPComAccount();
                 db.setVersion(DATABASE_VERSION);
             } else if (db.getVersion() == 15) {
+                db.execSQL(ADD_PARENTID_IN_CATEGORIES);
                 migratePreferences(ctx);
+                migrateWPComAccount();
+                db.setVersion(DATABASE_VERSION);
+            } else if (db.getVersion() == 16) {
+                db.execSQL(ADD_PARENTID_IN_CATEGORIES);
+                migrateWPComAccount();
+                db.setVersion(DATABASE_VERSION);
+            } else if (db.getVersion() == 17) {
+                db.execSQL(ADD_PARENTID_IN_CATEGORIES);
                 db.setVersion(DATABASE_VERSION);
             }
         } catch (SQLException e) {
@@ -577,6 +627,25 @@ public class WordPressDB {
         }
     }
 
+    private void migrateWPComAccount() {
+        Cursor c = db.query(SETTINGS_TABLE, new String[] { "username",
+                "password" }, "dotcomFlag=1", null, null, null, null);
+
+        if (c.getCount() > 0) {
+            c.moveToFirst();
+            String username = c.getString(0);
+            String password = c.getString(1);
+            SharedPreferences settings = PreferenceManager
+                    .getDefaultSharedPreferences(contextReference.get());
+            SharedPreferences.Editor editor = settings.edit();
+            editor.putString(WordPress.WPCOM_USERNAME_PREFERENCE, username);
+            editor.putString(WordPress.WPCOM_PASSWORD_PREFERENCE, password);
+            editor.commit();
+        }
+
+        c.close();
+    }
+
     public long addAccount(String url, String homeURL, String blogName,
             String username, String password, String httpuser,
             String httppassword, String imagePlacement,
@@ -604,32 +673,41 @@ public class WordPressDB {
         return db.insert(SETTINGS_TABLE, null, values);
     }
 
+    public boolean deactivateAccounts() {
+
+        ContentValues values = new ContentValues();
+        values.put("password", "");
+
+        boolean returnValue = db.update(SETTINGS_TABLE, values, null, null) > 0;
+
+        return (returnValue);
+    }
+
     public List<Map<String, Object>> getAccounts() {
 
+        if (db == null)
+            return new Vector<Map<String, Object>>();
+
         Cursor c = db.query(SETTINGS_TABLE, new String[] { "id", "blogName",
-                "username", "runService", "blogId", "url" }, null, null, null,
+                "username", "blogId", "url", "password" }, null, null, null,
                 null, null);
-        int id;
-        String blogName, username, url;
-        int blogId;
-        int runService;
+
         int numRows = c.getCount();
         c.moveToFirst();
         List<Map<String, Object>> accounts = new Vector<Map<String, Object>>();
         for (int i = 0; i < numRows; i++) {
 
-            id = c.getInt(0);
-            blogName = c.getString(1);
-            username = c.getString(2);
-            runService = c.getInt(3);
-            blogId = c.getInt(4);
-            url = c.getString(5);
-            if (id > 0) {
+            int id = c.getInt(0);
+            String blogName = c.getString(1);
+            String username = c.getString(2);
+            int blogId = c.getInt(3);
+            String url = c.getString(4);
+            String password = c.getString(5);
+            if (!password.equals("") && id > 0) {
                 Map<String, Object> thisHash = new HashMap<String, Object>();
                 thisHash.put("id", id);
                 thisHash.put("blogName", blogName);
                 thisHash.put("username", username);
-                thisHash.put("runService", runService);
                 thisHash.put("blogId", blogId);
                 thisHash.put("url", url);
                 accounts.add(thisHash);
@@ -638,26 +716,36 @@ public class WordPressDB {
         }
         c.close();
 
+        Collections.sort(accounts, Utils.BlogNameComparator);
+
         return accounts;
     }
 
-    public boolean checkMatch(String blogName, String blogURL, String username) {
+    public long checkMatch(String blogName, String blogURL, String username,
+            String password) {
 
-        Cursor c = db.query(SETTINGS_TABLE, new String[] { "blogName", "url" },
-                "blogName='" + addSlashes(blogName) + "' AND url='"
-                        + addSlashes(blogURL) + "'" + " AND username='"
-                        + username + "'", null, null, null, null);
+        if (blogName == null || blogURL == null || username == null
+                || password == null)
+            return -1;
+
+        Cursor c = db.query(SETTINGS_TABLE, new String[] { "id", "blogName",
+                "url" }, "blogName='" + addSlashes(blogName) + "' AND url='"
+                + addSlashes(blogURL) + "'" + " AND username='" + username
+                + "'", null, null, null, null);
         int numRows = c.getCount();
-        boolean result = false;
 
         if (numRows > 0) {
-            // this account is already saved, yo!
-            result = true;
+            // This account is already saved
+            c.moveToFirst();
+            long blogID = c.getLong(0);
+            ContentValues values = new ContentValues();
+            values.put("password", encryptPassword(password));
+            db.update(SETTINGS_TABLE, values, "id=" + blogID, null);
+            return blogID;
         }
 
         c.close();
-
-        return result;
+        return -1;
     }
 
     public static String addSlashes(String text) {
@@ -724,15 +812,19 @@ public class WordPressDB {
         boolean returnValue = db.update(SETTINGS_TABLE, values, "id=" + id,
                 null) > 0;
         if (isWPCom) {
-            // update the login for other wordpress.com accounts
-            ContentValues userPass = new ContentValues();
-            userPass.put("username", username);
-            userPass.put("password", encryptPassword(password));
-            returnValue = db.update(SETTINGS_TABLE, userPass, "username=\""
-                    + originalUsername + "\" AND dotcomFlag=1", null) > 0;
+            returnValue = updateWPComCredentials(username, password);
         }
 
         return (returnValue);
+    }
+
+    public boolean updateWPComCredentials(String username, String password) {
+        // update the login for wordpress.com blogs
+        ContentValues userPass = new ContentValues();
+        userPass.put("username", username);
+        userPass.put("password", encryptPassword(password));
+        return db.update(SETTINGS_TABLE, userPass, "username=\"" + username
+                + "\" AND dotcomFlag=1", null) > 0;
     }
 
     public boolean deleteAccount(Context ctx, int id) {
@@ -1229,14 +1321,9 @@ public class WordPressDB {
             values.put("description", post.getDescription());
             values.put("mt_text_more", post.getMt_text_more());
 
-            if (post.getCategories() != null) {
-                JSONArray jsonArray = null;
-                try {
-                    jsonArray = new JSONArray(post.getCategories().toString());
-                    values.put("categories", jsonArray.toString());
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+            JSONArray categoriesJsonArray = post.getJSONCategories();
+            if (categoriesJsonArray != null) {
+                values.put("categories", categoriesJsonArray.toString());
             }
 
             values.put("localDraft", post.isLocalDraft());
@@ -1250,6 +1337,7 @@ public class WordPressDB {
             values.put("latitude", post.getLatitude());
             values.put("longitude", post.getLongitude());
             values.put("isLocalChange", post.isLocalChange());
+            values.put("mt_excerpt", post.getExcerpt());
 
             returnValue = db.insert(POSTS_TABLE, null, values);
 
@@ -1270,14 +1358,9 @@ public class WordPressDB {
                 values.put("mt_text_more", post.getMt_text_more());
             values.put("uploaded", post.isUploaded());
 
-            if (post.getCategories() != null) {
-                JSONArray jsonArray = null;
-                try {
-                    jsonArray = new JSONArray(post.getCategories().toString());
-                    values.put("categories", jsonArray.toString());
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+            JSONArray categoriesJsonArray = post.getJSONCategories();
+            if (categoriesJsonArray != null) {
+                values.put("categories", categoriesJsonArray.toString());
             }
 
             values.put("localDraft", post.isLocalDraft());
@@ -1288,6 +1371,7 @@ public class WordPressDB {
             values.put("isPage", post.isPage());
             values.put("wp_post_format", post.getPostFormat());
             values.put("isLocalChange", post.isLocalChange());
+            values.put("mt_excerpt", post.getExcerpt());
 
             int pageInt = 0;
             if (post.isPage())
@@ -1311,13 +1395,13 @@ public class WordPressDB {
                     new String[] { "id", "blogID", "postid", "title",
                             "date_created_gmt", "dateCreated", "post_status" },
                     "blogID=" + blogID + " AND localDraft != 1 AND isPage=1",
-                    null, null, null, null);
+                    null, null, null, "date_created_gmt DESC");
         else
             c = db.query(POSTS_TABLE,
                     new String[] { "id", "blogID", "postid", "title",
                             "date_created_gmt", "dateCreated", "post_status" },
                     "blogID=" + blogID + " AND localDraft != 1 AND isPage=0",
-                    null, null, null, null);
+                    null, null, null, "date_created_gmt DESC");
 
         int numRows = c.getCount();
         c.moveToFirst();
@@ -1504,7 +1588,7 @@ public class WordPressDB {
             // values.put("post_name", post.getPost_name());
             // values.put("post_author", post.getPost_author());
             values.put("post_password", post.getPassword());
-            // values.put("post_excerpt", post.getPost_excerpt());
+            //values.put("post_excerpt", post.getExcerpt());
             values.put("post_content", post.getContent());
             // values.put("post_parent", post.getPost_parent());
             // values.put("post_mime_type", post.getPost_mime_type());
@@ -1550,8 +1634,8 @@ public class WordPressDB {
                 values.put("post_author", post.getPost_author());
             }
             values.put("post_password", post.getPassword());
-            if (post.getPost_excerpt() != null) {
-                values.put("post_excerpt", post.getPost_excerpt());
+            if (post.getExcerpt() != null) {
+                values.put("post_excerpt", post.getExcerpt());
             }
             values.put("post_content", post.getContent());
             if (post.getPost_parent() != null) {
@@ -1873,12 +1957,14 @@ public class WordPressDB {
     }
 
     // categories
-    public boolean insertCategory(int id, int wp_id, String category_name) {
+    public boolean insertCategory(int id, int wp_id, int parent_id,
+            String category_name) {
 
         ContentValues values = new ContentValues();
         values.put("blog_id", id);
         values.put("wp_id", wp_id);
         values.put("category_name", category_name.toString());
+        values.put("parent_id", parent_id);
         boolean returnValue = false;
         synchronized (this) {
             returnValue = db.insert(CATEGORIES_TABLE, null, values) > 0;
@@ -1907,17 +1993,32 @@ public class WordPressDB {
     }
 
     public int getCategoryId(int id, String category) {
-
         Cursor c = db.query(CATEGORIES_TABLE, new String[] { "wp_id" },
-                "category_name=\"" + category + "\" AND blog_id=" + id, null,
-                null, null, null);
+                "category_name=? AND blog_id=?", new String[] { category,
+                        String.valueOf(id) }, null, null, null);
         if (c.getCount() == 0)
             return 0;
         c.moveToFirst();
         int categoryID = 0;
         categoryID = c.getInt(0);
 
+        c.close();
+
         return categoryID;
+    }
+
+    public int getCategoryParentId(int id, String category) {
+        Cursor c = db.query(CATEGORIES_TABLE, new String[] { "parent_id" },
+                "category_name=? AND blog_id=?", new String[] { category,
+                        String.valueOf(id) }, null, null, null);
+        if (c.getCount() == 0)
+            return -1;
+        c.moveToFirst();
+        int categoryParentID = c.getInt(0);
+
+        c.close();
+
+        return categoryParentID;
     }
 
     public void clearCategories(int id) {
@@ -2028,7 +2129,7 @@ public class WordPressDB {
         return clearText;
     }
 
-    protected String decryptPassword(String encryptedPwd) {
+    public static String decryptPassword(String encryptedPwd) {
         try {
             DESKeySpec keySpec = new DESKeySpec(
                     PASSWORD_SECRET.getBytes("UTF-8"));
@@ -2269,7 +2370,7 @@ public class WordPressDB {
         return result;
     }
 
-    public void getPostTypes(Context context, int blogID,
+    public void getPostTypes(WPActionBarActivity activity, int blogID,
             ArrayList<MenuDrawerItem> items) {
         Cursor c = db.query(TYPES_TABLE, new String[] { "label", "name", },
                 "blogID =" + blogID, null, null, null, null);
@@ -2277,7 +2378,7 @@ public class WordPressDB {
             do {
                 String label = c.getString(0);
                 String postType = c.getString(1);
-                items.add(new MenuDrawerItem(context, label, postType));
+                items.add(new CustomMenuItem(activity, label, postType));
 
             } while (c.moveToNext());
         }
@@ -2566,6 +2667,44 @@ public class WordPressDB {
         }
         c.close();
         return url;
+    }
+
+    public void saveMPInfo(Template[] templates) {
+        db.delete(TEMPLATE_TABLE, null, null);
+        for (int i = 0; i < templates.length; i++) {
+            Template template = templates[i];
+            ContentValues values = new ContentValues();
+            values.put("id", template.getId());
+            values.put("position", template.getPosition());
+            values.put("link", template.getLink());
+            values.put("thumbnail", template.getThumbnail());
+            values.put("time", template.getTime());
+
+            synchronized (this) {
+                db.insert(TEMPLATE_TABLE, null, values);
+            }
+        }
+    }
+
+    public Template[] getTemplates() {
+        Cursor c = db.query(TEMPLATE_TABLE, null, null, null, null, null,
+                "position asc");
+        if (c == null | c.getCount() == 0 || !c.moveToFirst()) {
+            return new Template[0];
+        }
+        Template[] result = new Template[c.getCount()];
+        int i = 0;
+        do {
+            final int id = c.getInt(0);
+            final int position = c.getInt(1);
+            final String link = c.getString(2);
+            final String thumbnail = c.getString(3);
+            final long time = c.getLong(4);
+            result[i] = new Template(id, position, link, thumbnail, time);
+            i++;
+        } while (c.moveToNext());
+        c.close();
+        return result;
     }
 
     public int getWPCOMBlogID() {

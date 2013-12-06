@@ -2,7 +2,7 @@
 <resources>
 	<string name="no_site_error">Barkatu, sartutako URLan ez da WordPress gunerik aurkitu.</string>
 	<string name="xmlrpc_error">Ezin da konektatu. Mesedez sartu ezazu zure gunean xmlrpc.php fitxategiaren bide osoa eta saiatu berriz.</string>
-	<string name="copyright">息2012 Automattic, Inc</string>
+	<string name="copyright">©2012 Automattic, Inc</string>
 	<string name="remote_changes">Igotako eta aldaketak gorde gabeko bidalketa baten aldaketak egin dituzu. Freskatzeaz aurrera jarraitu eta lokaleko aldaketak gainidatzi nahi dituzu?</string>
 	<string name="local_changes">Aldaketa lokalak</string>
 	<string name="share_link">URLa partekatu</string>

@@ -39,6 +39,10 @@ class MenuDrawerAdapter extends BaseAdapter implements OnClickListener {
         notifyDataSetChanged();
     }
 
+    public void clear() {
+        mItems.clear();
+    }
+
     public ArrayList<MenuDrawerItem> getItems() {
         return this.mItems;
     }
@@ -60,7 +64,7 @@ class MenuDrawerAdapter extends BaseAdapter implements OnClickListener {
 
     @Override
     public int getItemViewType(int position) {
-        final int type = getItem(position).getActivityTag();
+        final int type = getItem(position).getItemId();
         switch (type) {
         case WPActionBarActivity.PAGES_ACTIVITY:
         case WPActionBarActivity.POSTS_ACTIVITY:
@@ -84,7 +88,7 @@ class MenuDrawerAdapter extends BaseAdapter implements OnClickListener {
         final ViewHolder holder;
         final MenuDrawerItem item = getItem(position);
         final int viewType = getItemViewType(position);
-        final int activityTag = item.getActivityTag();
+        final int activityTag = item.getItemId();
 
         if (v == null) {
             switch (viewType) {
@@ -114,10 +118,10 @@ class MenuDrawerAdapter extends BaseAdapter implements OnClickListener {
             holder = (ViewHolder) v.getTag();
         }
 
-        holder.title.setText(item.getPostType().getLabel());
+        holder.title.setText(item.getTitle());
 
         ImageView iconImageView = holder.icon;
-        Drawable d = item.getPostType().getIcon();
+        Drawable d = item.getIcon();
         if (d != null) {
             iconImageView.setScaleType(ScaleType.CENTER_CROP);
             iconImageView.setImageDrawable(d);
@@ -143,8 +147,7 @@ class MenuDrawerAdapter extends BaseAdapter implements OnClickListener {
             iconImageView.setAnimation(null);
         }
 
-        int checkedPosition = activity.getSelectedPosition();
-        if (position == checkedPosition) {
+        if (item.isSelected()) {
             // http://stackoverflow.com/questions/5890379/setbackgroundresource-discards-my-xml-layout-attributes
             int bottom = v.getPaddingBottom();
             int top = v.getPaddingTop();
@@ -187,8 +190,8 @@ class MenuDrawerAdapter extends BaseAdapter implements OnClickListener {
     public void onClick(View v) {
         final int index = (Integer) v.getTag();
         final MenuDrawerItem item = mItems.get(index);
-        final int tag = item.getActivityTag();
-        final String typeName = item.getPostType().getName();
+        final int tag = item.getItemId();
+        final String typeName = item.getPostType();
         activity.startNewPost(tag, typeName);
     }
 

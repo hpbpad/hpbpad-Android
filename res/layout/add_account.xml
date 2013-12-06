@@ -3,7 +3,7 @@
 	android:layout_width="fill_parent" android:layout_height="fill_parent"
 	android:background="@color/account_bg">
 
-	<LinearLayout android:layout_width="@dimen/add_account_width"
+	<LinearLayout android:layout_width="fill_parent"
 		android:layout_height="wrap_content" android:layout_gravity="top|center_horizontal"
 		android:gravity="center_horizontal" android:orientation="vertical"
 		android:paddingLeft="55dp" android:paddingRight="55dp">
@@ -19,7 +19,7 @@
 
 			<TextView android:id="@+id/l_section1" style="@style/WordPressSectionHeader"
 				android:layout_width="fill_parent" android:layout_height="wrap_content"
-				android:text="@string/account_details" />
+				android:text="@string/account_details" android:gravity="center_horizontal" />
 
 			<EditText android:id="@+id/url" android:layout_width="fill_parent"
 				android:layout_height="wrap_content" android:hint="@string/add_account_blog_url"

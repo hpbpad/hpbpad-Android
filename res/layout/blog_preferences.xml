@@ -8,7 +8,7 @@
 		android:layout_width="fill_parent" android:layout_height="wrap_content"
 		android:paddingLeft="@dimen/settings_padding" android:paddingRight="@dimen/settings_padding">
 
-		<RelativeLayout android:id="@+id/section1"
+		<RelativeLayout android:id="@+id/sectionContent"
 			android:layout_width="fill_parent" android:layout_height="wrap_content">
 
 			<TextView android:id="@+id/l_section1" style="@style/WordPressSettingsSectionHeader"
@@ -38,9 +38,9 @@
 				android:singleLine="true" android:hint="@string/httppassword" />
 		</RelativeLayout>
 
-		<RelativeLayout android:id="@+id/section2"
+		<RelativeLayout android:id="@+id/sectionTags"
 			android:layout_width="fill_parent" android:layout_height="wrap_content"
-			android:layout_below="@id/section1" android:layout_marginTop="8dp">
+			android:layout_below="@id/sectionContent" android:layout_marginTop="8dp">
 
 			<TextView android:id="@+id/l_section2" style="@style/WordPressSettingsSectionHeader"
 				android:layout_width="fill_parent" android:layout_height="wrap_content"
@@ -73,9 +73,9 @@
 				android:numeric="integer" android:singleLine="true" />
 		</RelativeLayout>
 
-		<RelativeLayout android:id="@+id/section3"
+		<RelativeLayout android:id="@+id/sectionLocation"
 			android:layout_width="fill_parent" android:layout_height="wrap_content"
-			android:layout_below="@id/section2" android:layout_marginTop="8dp">
+			android:layout_below="@id/sectionTags" android:layout_marginTop="8dp">
 
 			<TextView android:id="@+id/l_section3" style="@style/WordPressSettingsSectionHeader"
 				android:layout_width="fill_parent" android:layout_height="wrap_content"
@@ -86,12 +86,22 @@
 				android:text="@string/geotag" />
 		</RelativeLayout>
 
-		<RelativeLayout android:id="@+id/section4"
+		<RelativeLayout android:id="@+id/sectionSettings"
 			android:layout_width="fill_parent" android:layout_height="wrap_content"
-			android:layout_below="@id/section3" android:layout_marginTop="8dp">
+			android:layout_below="@id/sectionLocation" android:layout_marginTop="8dp">
+
+			<TextView android:id="@+id/l_section4" style="@style/WordPressSettingsSectionHeader"
+				android:layout_width="fill_parent" android:layout_height="wrap_content"
+				android:text="@string/manage" />
+
+			<Button android:id="@+id/view_admin" android:layout_width="wrap_content"
+				android:layout_height="wrap_content" android:layout_below="@id/l_section4"
+				android:layout_marginTop="4dp" android:text="@string/view_admin"
+				android:drawableRight="@drawable/dashboard_icon_wp" android:onClick="viewAdmin" />
 
 			<Button android:id="@+id/remove_account" android:layout_width="wrap_content"
-				android:layout_height="wrap_content" android:text="@string/remove_account"
+				android:layout_height="wrap_content" android:layout_marginTop="8dp"
+				android:layout_below="@id/view_admin" android:text="@string/remove_account"
 				android:onClick="removeBlog" />
 		</RelativeLayout>
 	</RelativeLayout>

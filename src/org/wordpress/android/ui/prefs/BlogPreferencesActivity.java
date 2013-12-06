@@ -10,6 +10,8 @@ import android.content.res.Configuration;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -18,23 +20,35 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.MenuItem;
 import com.justsystems.hpb.pad.R;
 
 import org.wordpress.android.WordPress;
 import org.wordpress.android.models.Blog;
-import org.wordpress.android.util.EscapeUtils;
+import org.wordpress.android.ui.DashboardActivity;
+import org.wordpress.android.util.StringUtils;
 
 /**
  * Activity for configuring blog specific settings.
  */
 public class BlogPreferencesActivity extends SherlockFragmentActivity {
-    protected static Intent svc = null;
     private String originalUsername;
+    private boolean mIsViewingAdmin;
 
     /** The blog this activity is managing settings for. */
     private Blog blog;
     private boolean mBlogDeleted;
+    private EditText mUsernameET;
+    private EditText mPasswordET;
+    private EditText mHttpUsernameET;
+    private EditText mHttpPasswordET;
+    private CheckBox mFullSizeCB;
+    private CheckBox mScaledCB;
+    private CheckBox mLocationCB;
+    private Spinner mImageWidthSpinner;
+    private EditText mScaledImageWidthET;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -44,31 +58,56 @@ public class BlogPreferencesActivity extends SherlockFragmentActivity {
         Integer id = getIntent().getIntExtra("id", -1);
         blog = WordPress.getBlog(id);
 
-        getSupportActionBar().setTitle(
-                EscapeUtils.unescapeHtml(blog.getBlogName()));
+        if (blog == null) {
+            Toast.makeText(this, getString(R.string.blog_not_found),
+                    Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setTitle(StringUtils.unescapeHTML(blog.getBlogName()));
+        actionBar.setDisplayHomeAsUpEnabled(true);
+
+        mUsernameET = (EditText) findViewById(R.id.username);
+        mPasswordET = (EditText) findViewById(R.id.password);
+        mHttpUsernameET = (EditText) findViewById(R.id.httpuser);
+        mHttpPasswordET = (EditText) findViewById(R.id.httppassword);
+        mScaledImageWidthET = (EditText) findViewById(R.id.scaledImageWidth);
+        mFullSizeCB = (CheckBox) findViewById(R.id.fullSizeImage);
+        mScaledCB = (CheckBox) findViewById(R.id.scaledImage);
+        mLocationCB = (CheckBox) findViewById(R.id.location);
+        mImageWidthSpinner = (Spinner) findViewById(R.id.maxImageWidth);
+
+        if (blog.isDotcomFlag()) {
+            // Hide credentials section
+            RelativeLayout credentialsRL = (RelativeLayout) findViewById(R.id.sectionContent);
+            credentialsRL.setVisibility(View.GONE);
+        }
+
         loadSettingsForBlog();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mIsViewingAdmin = false;
     }
 
     @Override
     protected void onPause() {
         super.onPause();
 
-        if (mBlogDeleted)
+        if (mBlogDeleted || mIsViewingAdmin)
             return;
 
-        EditText usernameET = (EditText) findViewById(R.id.username);
-        blog.setUsername(usernameET.getText().toString());
-        EditText passwordET = (EditText) findViewById(R.id.password);
-        blog.setPassword(passwordET.getText().toString());
-        EditText httpuserET = (EditText) findViewById(R.id.httpuser);
-        blog.setHttpuser(httpuserET.getText().toString());
-        EditText httppasswordET = (EditText) findViewById(R.id.httppassword);
-        blog.setHttppassword(httppasswordET.getText().toString());
+        blog.setUsername(mUsernameET.getText().toString());
+        blog.setPassword(mPasswordET.getText().toString());
+        blog.setHttpuser(mHttpUsernameET.getText().toString());
+        blog.setHttppassword(mHttpPasswordET.getText().toString());
 
-        CheckBox fullSize = (CheckBox) findViewById(R.id.fullSizeImage);
-        blog.setFullSizeImage(fullSize.isChecked());
-        CheckBox scaledImage = (CheckBox) findViewById(R.id.scaledImage);
-        blog.setScaledImage(scaledImage.isChecked());
+        blog.setFullSizeImage(mFullSizeCB.isChecked());
+        blog.setScaledImage(mScaledCB.isChecked());
         if (blog.isScaledImage()) {
             EditText scaledImgWidth = (EditText) findViewById(R.id.scaledImageWidth);
 
@@ -103,16 +142,15 @@ public class BlogPreferencesActivity extends SherlockFragmentActivity {
                 blog.setScaledImageWidth(width);
             }
         }
-        Spinner spinner = (Spinner) findViewById(R.id.maxImageWidth);
-        blog.setMaxImageWidth(spinner.getSelectedItem().toString());
 
-        long maxImageWidthId = spinner.getSelectedItemId();
+        blog.setMaxImageWidth(mImageWidthSpinner.getSelectedItem().toString());
+
+        long maxImageWidthId = mImageWidthSpinner.getSelectedItemId();
         int maxImageWidthIdInt = (int) maxImageWidthId;
 
         blog.setMaxImageWidthId(maxImageWidthIdInt);
 
-        CheckBox locationCB = (CheckBox) findViewById(R.id.location);
-        blog.setLocation(locationCB.isChecked());
+        blog.setLocation(mLocationCB.isChecked());
 
         blog.save(originalUsername);
 
@@ -127,6 +165,18 @@ public class BlogPreferencesActivity extends SherlockFragmentActivity {
         mIntent.putExtras(bundle);
         setResult(RESULT_OK, mIntent);
         finish();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        int itemID = item.getItemId();
+        if (itemID == android.R.id.home) {
+            finish();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     private void loadSettingsForBlog() {
@@ -145,7 +195,6 @@ public class BlogPreferencesActivity extends SherlockFragmentActivity {
                 .getString(R.string.http_credentials).toUpperCase(
                         Locale.getDefault()));
 
-        Spinner spinner = (Spinner) this.findViewById(R.id.maxImageWidth);
         ArrayAdapter<Object> spinnerArrayAdapter = new ArrayAdapter<Object>(
                 this, R.layout.spinner_textview, new String[] {
                         "Original Size", "100", "200", "300", "400", "500",
@@ -154,66 +203,78 @@ public class BlogPreferencesActivity extends SherlockFragmentActivity {
                         "2000" });
         spinnerArrayAdapter
                 .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(spinnerArrayAdapter);
+        mImageWidthSpinner.setAdapter(spinnerArrayAdapter);
+        mImageWidthSpinner
+                .setOnItemSelectedListener(new OnItemSelectedListener() {
 
-        EditText usernameET = (EditText) findViewById(R.id.username);
-        usernameET.setText(blog.getUsername());
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent,
+                            View view, int position, long id) {
+                        CheckBox fullSizeImageCheckBox = (CheckBox) findViewById(R.id.fullSizeImage);
+                        if (id == 0) //Original size selected. Do not show the link to full image.
+                            fullSizeImageCheckBox.setVisibility(View.GONE);
+                        else
+                            fullSizeImageCheckBox.setVisibility(View.VISIBLE);
+                    }
+
+                    @Override
+                    public void onNothingSelected(AdapterView<?> arg0) {
+                    }
+                });
+
+        mUsernameET.setText(blog.getUsername());
         originalUsername = blog.getUsername();
-
-        EditText passwordET = (EditText) findViewById(R.id.password);
-        passwordET.setText(blog.getPassword());
-
-        EditText httpUserET = (EditText) findViewById(R.id.httpuser);
-        httpUserET.setText(blog.getHttpuser());
-
-        EditText httpPasswordET = (EditText) findViewById(R.id.httppassword);
-        httpPasswordET.setText(blog.getHttppassword());
+        mPasswordET.setText(blog.getPassword());
+        mHttpUsernameET.setText(blog.getHttpuser());
+        mHttpPasswordET.setText(blog.getHttppassword());
         TextView httpUserLabel = (TextView) findViewById(R.id.l_httpuser);
         if (blog.isDotcomFlag()) {
-            httpPasswordET.setVisibility(View.GONE);
+            mHttpUsernameET.setVisibility(View.GONE);
+            mHttpPasswordET.setVisibility(View.GONE);
             httpUserLabel.setVisibility(View.GONE);
-            httpUserET.setVisibility(View.GONE);
         } else {
-            httpPasswordET.setVisibility(View.VISIBLE);
+            mHttpUsernameET.setVisibility(View.VISIBLE);
+            mHttpPasswordET.setVisibility(View.VISIBLE);
             httpUserLabel.setVisibility(View.VISIBLE);
-            httpUserET.setVisibility(View.VISIBLE);
         }
 
-        CheckBox fullSize = (CheckBox) findViewById(R.id.fullSizeImage);
-        fullSize.setChecked(blog.isFullSizeImage());
-        CheckBox scaledImage = (CheckBox) findViewById(R.id.scaledImage);
-        scaledImage.setChecked(blog.isScaledImage());
-        EditText scaledImageWidth = (EditText) findViewById(R.id.scaledImageWidth);
-        scaledImageWidth.setText("" + blog.getScaledImageWidth());
+        mFullSizeCB.setChecked(blog.isFullSizeImage());
+        mScaledCB.setChecked(blog.isScaledImage());
+
+        this.mScaledImageWidthET.setText("" + blog.getScaledImageWidth());
         showScaledSetting(blog.isScaledImage());
+
+        CheckBox scaledImage = (CheckBox) findViewById(R.id.scaledImage);
+        scaledImage.setChecked(false);
+        scaledImage.setVisibility(View.GONE);
+
         // sets up a state listener for the scaled image checkbox
-        ((CheckBox) findViewById(R.id.scaledImage))
-                .setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        CheckBox scaledImage = (CheckBox) findViewById(R.id.scaledImage);
-                        showScaledSetting(scaledImage.isChecked());
-                        if (scaledImage.isChecked()) {
-                            CheckBox fullSize = (CheckBox) findViewById(R.id.fullSizeImage);
-                            fullSize.setChecked(false);
-                        }
-                    }
-                });
+        /*     ((CheckBox) findViewById(R.id.scaledImage)).setOnClickListener(new View.OnClickListener() {
+                 @Override
+                 public void onClick(View v) {
+                     CheckBox scaledImage = (CheckBox) findViewById(R.id.scaledImage);
+                     showScaledSetting(scaledImage.isChecked());
+                     if (scaledImage.isChecked()) {
+                         CheckBox fullSize = (CheckBox) findViewById(R.id.fullSizeImage);
+                         fullSize.setChecked(false);
+                     }
+                 }
+             });*/
         // sets up a state listener for the fullsize checkbox
-        ((CheckBox) findViewById(R.id.fullSizeImage))
-                .setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        CheckBox fullSize = (CheckBox) findViewById(R.id.fullSizeImage);
-                        if (fullSize.isChecked()) {
-                            CheckBox scaledImage = (CheckBox) findViewById(R.id.scaledImage);
-                            if (scaledImage.isChecked()) {
-                                scaledImage.setChecked(false);
-                                showScaledSetting(false);
-                            }
-                        }
+        CheckBox fullSizeImageCheckBox = (CheckBox) findViewById(R.id.fullSizeImage);
+        fullSizeImageCheckBox.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                CheckBox fullSize = (CheckBox) findViewById(R.id.fullSizeImage);
+                if (fullSize.isChecked()) {
+                    CheckBox scaledImage = (CheckBox) findViewById(R.id.scaledImage);
+                    if (scaledImage.isChecked()) {
+                        scaledImage.setChecked(false);
+                        showScaledSetting(false);
                     }
-                });
+                }
+            }
+        });
         // don't show location option for devices that have no location support.
         boolean hasLocationProvider = false;
         LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
@@ -225,16 +286,19 @@ public class BlogPreferencesActivity extends SherlockFragmentActivity {
             }
         }
 
-        CheckBox locationCB = (CheckBox) findViewById(R.id.location);
         if (hasLocationProvider) {
-            locationCB.setChecked(blog.isLocation());
+            mLocationCB.setChecked(blog.isLocation());
         } else {
-            locationCB.setChecked(false);
-            RelativeLayout locationLayout = (RelativeLayout) findViewById(R.id.section3);
+            mLocationCB.setChecked(false);
+            RelativeLayout locationLayout = (RelativeLayout) findViewById(R.id.sectionLocation);
             locationLayout.setVisibility(View.GONE);
         }
 
-        spinner.setSelection(blog.getMaxImageWidthId());
+        mImageWidthSpinner.setSelection(blog.getMaxImageWidthId());
+        if (blog.getMaxImageWidthId() == 0) //Original size selected. Do not show the link to full image.
+            fullSizeImageCheckBox.setVisibility(View.GONE);
+        else
+            fullSizeImageCheckBox.setVisibility(View.VISIBLE);
     }
 
     /**
@@ -308,5 +372,15 @@ public class BlogPreferencesActivity extends SherlockFragmentActivity {
                 });
         dialogBuilder.setCancelable(false);
         dialogBuilder.create().show();
+    }
+
+    /**
+     * View the blog admin area in the web browser
+     */
+    public void viewAdmin(View view) {
+        mIsViewingAdmin = true;
+        Intent i = new Intent(this, DashboardActivity.class);
+        i.putExtra("blogID", blog.getId());
+        startActivity(i);
     }
 }

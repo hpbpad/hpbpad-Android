@@ -3,11 +3,9 @@ package org.wordpress.android.ui.reader;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
@@ -20,6 +18,7 @@ import android.widget.TextView;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 import com.actionbarsherlock.view.Window;
 import com.justsystems.hpb.pad.R;
@@ -27,7 +26,6 @@ import com.justsystems.hpb.pad.R;
 import org.wordpress.android.Constants;
 import org.wordpress.android.WordPress;
 import org.wordpress.android.ui.WPActionBarActivity;
-import org.wordpress.android.ui.list.PostsActivity;
 import org.wordpress.android.ui.reader.ReaderBaseFragment.ChangeTopicListener;
 import org.wordpress.android.ui.reader.ReaderBaseFragment.GetLastSelectedItemListener;
 import org.wordpress.android.ui.reader.ReaderBaseFragment.GetLoadedItemsListener;
@@ -175,36 +173,29 @@ public class ReaderActivity extends WPActionBarActivity implements
 
             return f;
         }
-
     }
 
     @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
-
-        menu.clear();
-        menu.add(0, 0, 0, getResources().getText(R.string.refresh));
-        refreshMenuItem = menu.findItem(0);
-        refreshMenuItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        refreshMenuItem.setIcon(R.drawable.ab_icon_refresh);
-
+    public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
+        MenuInflater inflater = getSupportMenuInflater();
+        inflater.inflate(R.menu.reader, menu);
+        refreshMenuItem = menu.findItem(R.id.menu_refresh);
         if (shouldAnimateRefreshButton) {
             shouldAnimateRefreshButton = false;
             startAnimatingRefreshButton(refreshMenuItem);
         }
 
         if (readerPager.getCurrentItem() > 1) {
-            menu.removeItem(0);
-            menu.add(0, 1, 0, getResources().getText(R.string.view_in_browser));
-            MenuItem viewMenuItem = menu.findItem(1);
-            viewMenuItem.setIcon(R.drawable.ab_icon_web);
-            viewMenuItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
-            menu.add(0, 2, 0, getResources().getText(R.string.share_link));
-            MenuItem shareMenuItem = menu.findItem(2);
-            shareMenuItem.setIcon(R.drawable.ab_icon_share);
-            shareMenuItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+            menu.findItem(R.id.menu_refresh).setVisible(false);
+            menu.findItem(R.id.menu_browser).setVisible(true);
+            menu.findItem(R.id.menu_share_link).setVisible(true);
+        } else {
+            menu.findItem(R.id.menu_refresh).setVisible(true);
+            menu.findItem(R.id.menu_browser).setVisible(false);
+            menu.findItem(R.id.menu_share_link).setVisible(false);
         }
-
-        return super.onPrepareOptionsMenu(menu);
+        return true;
     }
 
     public boolean onOptionsItemSelected(final MenuItem item) {
@@ -212,11 +203,11 @@ public class ReaderActivity extends WPActionBarActivity implements
         final ReaderDetailPageFragment readerPageDetailFragment = (ReaderDetailPageFragment) detailPage;
 
         int itemId = item.getItemId();
-        if (itemId == 0) {
+        if (itemId == R.id.menu_refresh) {
             ReaderImplFragment readerPageFragment = (ReaderImplFragment) readerPage;
             readerPageFragment.refreshReader();
             return true;
-        } else if (itemId == 1) {
+        } else if (itemId == R.id.menu_browser) {
             if (readerPageDetailFragment != null
                     && readerPageDetailFragment != null) {
                 if (readerPager.getCurrentItem() == 2) {
@@ -240,7 +231,7 @@ public class ReaderActivity extends WPActionBarActivity implements
                 }
             }
             return true;
-        } else if (itemId == 2) {
+        } else if (itemId == R.id.menu_share_link) {
             if (readerWebPageFragment != null
                     && readerPageDetailFragment != null) {
                 if (readerPager.getCurrentItem() == 2) {
@@ -268,6 +259,12 @@ public class ReaderActivity extends WPActionBarActivity implements
             if (readerPager.getCurrentItem() > 1) {
                 readerPager.setCurrentItem(readerPager.getCurrentItem() - 1);
                 supportInvalidateOptionsMenu();
+                if (readerPager.getCurrentItem() == 1) {
+                    try {
+                        mMenuDrawer.setDrawerIndicatorEnabled(true);
+                    } catch (Exception e) {
+                    }
+                }
                 return true;
             }
         }
@@ -306,6 +303,10 @@ public class ReaderActivity extends WPActionBarActivity implements
     @Override
     public void onPostSelected(String requestedURL) {
         readerPager.setCurrentItem(2, true);
+        try {
+            mMenuDrawer.setDrawerIndicatorEnabled(false);
+        } catch (Exception e) {
+        }
         supportInvalidateOptionsMenu();
     }
 
@@ -318,6 +319,12 @@ public class ReaderActivity extends WPActionBarActivity implements
                         .loadUrl("javascript:Reader2.clear_article_details();");
             }
             readerPager.setCurrentItem(readerPager.getCurrentItem() - 1, true);
+            if (readerPager.getCurrentItem() == 1) {
+                try {
+                    mMenuDrawer.setDrawerIndicatorEnabled(true);
+                } catch (Exception e) {
+                }
+            }
             supportInvalidateOptionsMenu();
         } else
             super.onBackPressed();
@@ -476,18 +483,6 @@ public class ReaderActivity extends WPActionBarActivity implements
         if (WordPress.currentBlog.isDotcomFlag()) {
             ReaderImplFragment readerPageFragment = (ReaderImplFragment) readerPage;
             readerPageFragment.reloadReader();
-        } else {
-            // Self-hosted blogs do not have Reader access, send to posts instead
-            SharedPreferences settings = PreferenceManager
-                    .getDefaultSharedPreferences(ReaderActivity.this);
-            SharedPreferences.Editor editor = settings.edit();
-            editor.putInt("wp_pref_last_activity", POSTS_ACTIVITY);
-            editor.commit();
-            mShouldFinish = true;
-            Intent i = new Intent(ReaderActivity.this, PostsActivity.class);
-            i.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-            mMenuDrawer.closeMenu();
-            startActivityWithDelay(i);
         }
 
     }

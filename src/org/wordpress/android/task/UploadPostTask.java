@@ -20,8 +20,8 @@ import org.xmlrpc.android.XMLRPCClient;
 import org.xmlrpc.android.XMLRPCException;
 
 import org.wordpress.android.models.Post;
-import org.wordpress.android.ui.list.PagesActivity;
-import org.wordpress.android.ui.list.PostsActivity;
+import org.wordpress.android.ui.posts.PagesActivity;
+import org.wordpress.android.ui.posts.PostsActivity;
 import org.wordpress.android.util.PostUploadService;
 
 public class UploadPostTask extends AbsUploadTask {
@@ -56,7 +56,7 @@ public class UploadPostTask extends AbsUploadTask {
         if (mediaError)
             return false;
 
-        JSONArray categories = post.getCategories();
+        JSONArray categories = post.getJSONCategories();
         String[] theCategories = null;
         if (categories != null) {
             theCategories = new String[categories.length()];
@@ -101,8 +101,8 @@ public class UploadPostTask extends AbsUploadTask {
             }
         }
 
-        if (post.getMt_excerpt() != null)
-            contentStruct.put("mt_excerpt", post.getMt_excerpt());
+        if (post.getExcerpt() != null)
+            contentStruct.put("mt_excerpt", post.getExcerpt());
 
         contentStruct.put((post.isPage()) ? "page_status" : "post_status",
                 post.getPostStatus());

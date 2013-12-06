@@ -2,4 +2,4 @@
 <ImageView xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="match_parent" android:layout_height="match_parent"
 	android:padding="@dimen/startpage_page_icon_margin" android:background="@drawable/top_preview_bg"
-	android:scaleType="matrix" />
+	android:scaleType="matrix" android:cropToPadding="true" />

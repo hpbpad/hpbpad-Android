@@ -3,10 +3,13 @@ package org.wordpress.android.models;
 import java.util.List;
 import java.util.Vector;
 
+import android.util.Log;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 
 import org.wordpress.android.WordPress;
+import org.wordpress.android.util.StringUtils;
 
 public class Post implements Postable {
 
@@ -96,10 +99,10 @@ public class Post implements Postable {
         }
     }
 
-    public Post(int blog_id, String title, String content, String picturePaths,
-            long date, String categories, String tags, String status,
-            String password, double latitude, double longitude, boolean isPage,
-            String postFormat, boolean createBlogReference,
+    public Post(int blog_id, String title, String content, String excerpt,
+            String picturePaths, long date, String categories, String tags,
+            String status, String password, double latitude, double longitude,
+            boolean isPage, String postFormat, boolean createBlogReference,
             boolean isLocalChange) {
         // create a new post
         if (createBlogReference) {
@@ -112,6 +115,7 @@ public class Post implements Postable {
         this.blogID = blog_id;
         this.title = title;
         this.description = content;
+        this.mt_excerpt = excerpt;
         this.mediaPaths = picturePaths;
         this.date_created_gmt = date;
         this.categories = categories;
@@ -166,18 +170,20 @@ public class Post implements Postable {
         this.localDraft = localDraft;
     }
 
-    public JSONArray getCategories() {
+    public JSONArray getJSONCategories() {
         JSONArray jArray = null;
         if (categories == null)
             categories = "";
         try {
+            categories = StringUtils.unescapeHTML(categories);
             jArray = new JSONArray(categories);
         } catch (JSONException e) {
+            Log.e("WordPress - getJSONCategories", e.getLocalizedMessage());
         }
         return jArray;
     }
 
-    public void setCategories(JSONArray categories) {
+    public void setJSONCategories(JSONArray categories) {
         this.categories = categories.toString();
     }
 
@@ -232,11 +238,11 @@ public class Post implements Postable {
         mt_allow_pings = mtAllowPings;
     }
 
-    public String getMt_excerpt() {
+    public String getExcerpt() {
         return mt_excerpt;
     }
 
-    public void setMt_excerpt(String mtExcerpt) {
+    public void setExcerpt(String mtExcerpt) {
         mt_excerpt = mtExcerpt;
     }
 

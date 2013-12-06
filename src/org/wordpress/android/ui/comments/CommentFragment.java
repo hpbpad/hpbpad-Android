@@ -1,38 +1,33 @@
 package org.wordpress.android.ui.comments;
 
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.support.v4.app.Fragment;
 import android.text.util.Linkify;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.android.volley.toolbox.NetworkImageView;
 import com.justsystems.hpb.pad.R;
 
 import org.wordpress.android.WordPress;
+import org.wordpress.android.lockmanager.AppLockManager;
 import org.wordpress.android.models.Comment;
+import org.wordpress.android.util.StringUtils;
 
 public class CommentFragment extends Fragment {
 
-    private Drawable d;
     private OnCommentStatusChangeListener onCommentStatusChangeListener;
 
     public void onAttach(Activity activity) {
@@ -45,40 +40,6 @@ public class CommentFragment extends Fragment {
             throw new ClassCastException(activity.toString()
                     + " must implement NoteSelectedCallback");
         }
-    }
-
-    private Handler handler = new Handler() {
-
-        public void handleMessage(Message msg) {
-
-            super.handleMessage(msg);
-
-            try {
-                final ImageView ivGravatar = (ImageView) getActivity()
-                        .findViewById(R.id.gravatar);
-                ivGravatar.setImageDrawable(d);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-        }
-
-    };
-
-    private void getGravatar(final String gravatarURL) {
-
-        new Thread() {
-
-            public void run() {
-
-                d = getDrawable(gravatarURL);
-
-                handler.sendEmptyMessage(0);
-
-            }
-
-        }.start();
-
     }
 
     @Override
@@ -173,7 +134,7 @@ public class CommentFragment extends Fragment {
 
     }
 
-    private void processCommentStatus() {
+    protected void processCommentStatus() {
 
         Button approve = (Button) getActivity().findViewById(
                 R.id.approveComment);
@@ -222,23 +183,6 @@ public class CommentFragment extends Fragment {
         }
     }
 
-    public static String getMd5Hash(String input) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] messageDigest = md.digest(input.getBytes());
-            BigInteger number = new BigInteger(1, messageDigest);
-            String md5 = number.toString(16);
-
-            while (md5.length() < 32)
-                md5 = "0" + md5;
-
-            return md5;
-        } catch (NoSuchAlgorithmException e) {
-            Log.e("MD5", e.getMessage());
-            return null;
-        }
-    }
-
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         // ignore orientation change
@@ -250,9 +194,12 @@ public class CommentFragment extends Fragment {
         WordPress.currentComment = comment;
 
         final String gravatarURL = "http://gravatar.com/avatar/"
-                + getMd5Hash(comment.authorEmail) + "?s=200&d=mm";
+                + StringUtils.getMd5Hash(comment.authorEmail) + "?s=200&d=mm";
 
-        getGravatar(gravatarURL);
+        NetworkImageView gravatar = (NetworkImageView) getActivity()
+                .findViewById(R.id.gravatar);
+        gravatar.setDefaultImageResId(R.drawable.placeholder);
+        gravatar.setImageUrl(gravatarURL, WordPress.imageLoader);
 
         TextView tvName = (TextView) getActivity().findViewById(
                 R.id.commentDetailName);
@@ -268,6 +215,12 @@ public class CommentFragment extends Fragment {
         if (!comment.authorEmail.equals("")) {
             tvEmail.setText(comment.authorEmail);
             Linkify.addLinks(tvEmail, Linkify.ALL);
+            tvEmail.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    AppLockManager.getInstance().setExtendedTimeout();
+                }
+            });
         } else {
             tvEmail.setVisibility(View.GONE);
         }
@@ -277,6 +230,12 @@ public class CommentFragment extends Fragment {
         if (!comment.authorURL.equals("")) {
             tvURL.setText(comment.authorURL);
             Linkify.addLinks(tvURL, Linkify.ALL);
+            tvURL.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    AppLockManager.getInstance().setExtendedTimeout();
+                }
+            });
         } else {
             tvURL.setVisibility(View.GONE);
         }
@@ -335,10 +294,9 @@ public class CommentFragment extends Fragment {
                 R.id.commentDetailPost);
         tvPost.setText("");
 
-        ImageView ivGravatar = (ImageView) getActivity().findViewById(
-                R.id.gravatar);
+        NetworkImageView ivGravatar = (NetworkImageView) getActivity()
+                .findViewById(R.id.gravatar);
         ivGravatar.setImageDrawable(null);
-
     }
 
     @Override

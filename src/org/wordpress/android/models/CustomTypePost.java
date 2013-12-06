@@ -45,6 +45,8 @@ public final class CustomTypePost implements Postable {
 
     private Blog blog;
 
+    private String quickPostType;
+
     public CustomTypePost(int blog_id, long post_id, String postType) {
         // load an existing post
         List<Object> postVals = WordPress.wpDB.loadCustomTypePost(postType,
@@ -217,8 +219,12 @@ public final class CustomTypePost implements Postable {
         this.post_password = password;
     }
 
-    public String getPost_excerpt() {
+    public String getExcerpt() {
         return this.post_excerpt;
+    }
+
+    public void setExcerpt(String mtExcerpt) {
+        this.post_excerpt = mtExcerpt;
     }
 
     public String getContent() {
@@ -310,6 +316,10 @@ public final class CustomTypePost implements Postable {
     public void delete() {
         // deletes a post/page draft
         WordPress.wpDB.deleteCustomTypePost(this);
+    }
+
+    public void setQuickPostType(String type) {
+        this.quickPostType = type;
     }
 
     public Blog getBlog() {

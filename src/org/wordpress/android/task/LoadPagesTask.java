@@ -4,12 +4,12 @@ import android.content.res.Resources;
 
 import com.justsystems.hpb.pad.R;
 
-import org.wordpress.android.ui.list.ViewPostsFragment;
-import org.wordpress.android.ui.list.ViewPostsFragment.OnRefreshListener;
+import org.wordpress.android.ui.posts.PostsListFragment;
+import org.wordpress.android.ui.posts.PostsListFragment.OnRefreshListener;
 
 public class LoadPagesTask extends AbsLoadPostsTask {
 
-    public LoadPagesTask(ViewPostsFragment fragment,
+    public LoadPagesTask(PostsListFragment fragment,
             OnRefreshListener mOnRefreshListener, boolean loadMore) {
         super(fragment, mOnRefreshListener, loadMore);
     }

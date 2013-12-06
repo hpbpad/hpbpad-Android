@@ -15,6 +15,7 @@ import android.widget.BaseExpandableListAdapter;
 import android.widget.CheckedTextView;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.OnChildClickListener;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -559,22 +560,29 @@ public class SelectTermsActivity extends SherlockListActivity implements
         @Override
         public View getChildView(int groupPosition, int childPosition,
                 boolean isLastChild, View convertView, ViewGroup parent) {
-            if (convertView == null) {
-                LayoutInflater inflater = LayoutInflater.from(this.activity);
-                convertView = inflater.inflate(R.layout.categories_row, null);
-            }
+            LayoutInflater inflater = LayoutInflater.from(this.activity);
+            convertView = inflater.inflate(R.layout.categories_row, null);
+            CheckedTextView textView = (CheckedTextView) convertView
+                    .findViewById(R.id.categoryRowText);
+            ImageView levelIndicatorView = (ImageView) convertView
+                    .findViewById(R.id.categoryRowLevelIndicator);
 
             HierarchicalTerm term = (HierarchicalTerm) getChild(groupPosition,
                     childPosition);
-            CheckedTextView tv = (CheckedTextView) convertView;
-            StringBuilder sb = new StringBuilder(term.getTerm().getName());
-            for (int i = 0; i < term.getHierarchy(); i++) {
-                sb.insert(0, "―");
+            textView.setText(term.getTerm().getName());
+
+            int level = term.getHierarchy() + 1;
+            if (level == 1) { // hide ImageView
+                levelIndicatorView.setVisibility(View.GONE);
+            } else {
+                ViewGroup.LayoutParams params = levelIndicatorView
+                        .getLayoutParams();
+                params.width = (params.width / 2) * level;
+                levelIndicatorView.setLayoutParams(params);
             }
-            tv.setText(sb.toString());
 
             boolean isChecked = checked.get(groupPosition).get(childPosition);
-            tv.setChecked(isChecked);
+            textView.setChecked(isChecked);
             Debug.logd("c", "g" + groupPosition + " c" + childPosition + " che"
                     + isChecked);
             return convertView;

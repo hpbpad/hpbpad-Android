@@ -1,5 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+	<string name="remote_changes">Du hast Änderungen an einem Beitrag vorgenommen, welcher noch nicht hochgeladen wurde. Neu laden und alle lokalen Änderungen überschreiben?</string>
+	<string name="upload">Hochladen</string>
+	<string name="error_load_comment">Leider konnte der Kommentar nicht geladen werden. Bitte versuche es erneut.</string>
+	<string name="manage">Verwalten</string>
+	<string name="dashboard_tip">Tippe die Zurück-Taste um zur App zurückzukehren.</string>
+	<string name="discard">Verwerfen</string>
+	<string name="prompt_save_changes">Möchtest du deine Änderungen speichern?</string>
+	<string name="retry_reply">Antworten fehlgeschlagen. Tippen, um nochmals zu versuchen.</string>
+	<string name="reply_failed">Antwort fehlgeschlagen.</string>
+	<string name="tap_retry">Tippen, um nochmals zu versuchen.</string>
+	<string name="error_parsing_response">Leider ist beim Abrufen der Daten ein Fehler aufgetreten. Bitte versuche es später noch einmal.</string>
+	<string name="sure_sign_out">Bist Du sicher, dass Du dich von WordPress.com abmelden möchtest? </string>
+	<string name="sign_out_confirm">Bist Du sicher, dass Du dich abmelden möchtest?</string>
+	<string name="please_sign_in">Bitte erneut anmelden.</string>
+	<string name="wpcom">WordPress.com</string>
+	<string name="sign_in">Anmelden</string>
+	<string name="sign_out">Abmelden</string>
+	<string name="confirm_delete">Löschung bestätigen</string>
+	<string name="confirm_delete_data">Bist Du sicher, dass Du diesen Kommentar löschen möchtest?</string>
+	<string name="attempting_configure">Anmelden ...</string>
+	<string name="log_in">Anmelden</string>
+	<string name="notifications">Benachrichtigungen</string>
+	<string name="manage_notifications">Benachrichtigungen verwalten</string>
+	<string name="enable_notifications">Benachrichtigungen aktivieren</string>
+	<string name="types">Typen</string>
+	<string name="options">Einstellungen</string>
+	<string name="notifications_turn_off">Ausschalten</string>
+	<string name="notifications_turn_off_1hr">Ausschalten für 1 Stunde</string>
+	<string name="notifications_turn_off_8hr">Ausschalten für 8 Stunden</string>
+	<string name="tap_to_reply">Antippen zum Antworten</string>
+	<string name="notification_replying">Veröffentliche Antwort</string>
+	<string name="note_reply_successful">Antwort veröffentlicht</string>
+	<string name="follow">Folgen</string>
+	<string name="unfollow">Nicht mehr folgen</string>
+	<string name="new_notifications">%d neue Benachrichtigungen</string>
+	<string name="more_notifications">und %d weitere.</string>
+	<string name="tap_to_view">Antippen zum Anschauen.</string>
+	<string name="moderate_comment">Kommentar moderieren</string>
+	<string name="tooltip_follow">Diesem Blog folgen oder nicht mehr folgen</string>
+	<string name="error_following_blog">Tut mir Leid, ein Fehler ist aufgetreten, als versucht wurde dem Blog zu folgen. Bitte versuche es später noch einmal.</string>
+	<string name="add_comment_send">Kommentar absenden</string>
+	<string name="add_comment_enter">Kommentar eingeben:</string>
+	<string name="comment_added">Kommentar erfolgreich hinzugefügt</string>
+	<string name="add_comment">Kommentar hinzufügen</string>
+	<string name="write_comment">Kommentar schreiben</string>
+	<string name="add_comment_required">Erforderliches Feld</string>
+	<string name="add_comment_please_enter">Bitte gib etwas im Kommentarfeld ein.</string>
+	<string name="attempting_add_comment">Versuche den Kommentar zu veröffentlichen</string>
+	<string name="view_admin">Admin anzeigen</string>
+	<string name="edit_comment">Kommentar bearbeiten</string>
+	<string name="share_url_page">Seite teilen</string>
+	<string name="fatal_db_error">Es tut mir wirklich Leid, aber es ist ein Fehler aufgetreten, als versucht wurde die App-Datenbank zu erstellen. Bitte installiere die App noch einmal neu.</string>
+	<string name="loading">Lädt...</string>
 	<string name="view_site">Webseite anschauen</string>
 	<string name="open_source_licenses">Open-Source-Lizenzen</string>
 	<string name="post_signature">Beitragssignatur</string>
@@ -8,7 +61,6 @@
 	<string name="httppassword">HTTP-Passwort</string>
 	<string name="http_credentials">HTTP-Zugangsdaten (optional)</string>
 	<string name="enable_blogs">Blogs aktivieren</string>
-	<string name="notifications_interval">Aktualisierungsintervall</string>
 	<string name="tagline">Starte in Sekunden mit dem Bloggen.</string>
 	<string name="file_error_create">Konnte keine Temp-Datei für den Medien-Upload erstellen. Bitte stelle sicher, dass genug freier Speicherplatz auf deinem Gerät verfügbar ist.</string>
 	<string name="error_media_upload">Beim Hochladen von Medien ist ein Fehler aufgetreten</string>
@@ -31,7 +83,6 @@
 	<string name="category_name">Kategoriename</string>
 	<string name="category_slug">Kategorie-Titelform (optional)</string>
 	<string name="category_desc">Kategorie-Beschreibung (optional)</string>
-	<string name="log_in">Anmelden</string>
 	<string name="add_account_blog_url">Blog-URL</string>
 	<string name="reader">Reader</string>
 	<string name="out_of_memory">Nicht genügend Speicher verfügbar.</string>
@@ -69,7 +120,6 @@
 	<string name="ok">OK</string>
 	<string name="sure_to_cancel_edit_comment">Bist Du sicher, dass Du die Bearbeitung des Kommentars abbrechen möchtest?</string>
 	<string name="xmlrpc_error">Verbindung konnte nicht hergestellt werden. Bitte gib den kompletten Pfad zur xmlrpc.php auf deiner Webseite an und probiere es noch einmal.</string>
-	<string name="remote_changes">Du hast Änderungen an einem hochgeladenen Artikel vorgenommen, die noch nicht gespeichert wurden. Mit dem Aktualisieren weiter machen und die lokalen Änderungen überschreiben?</string>
 	<string name="local_changes">Lokale Änderungen</string>
 	<string name="upload_scaled_image">Hochladen und zum skalierten Bild verlinken</string>
 	<string name="scaled_image_error">Bitte gib einen gültigen Wert für die skalierte Breite ein</string>
@@ -96,7 +146,6 @@
 	<string name="link_enter_url_text">Link-Text (optional)</string>
 	<string name="link_enter_url">URL</string>
 	<string name="posted_from">Veröffentlicht mit WordPress für Android</string>
-	<string name="comment_notifications">Kommentar-Benachrichtigungen</string>
 	<string name="mark_spam">Spam</string>
 	<string name="uploading">Lädt hoch</string>
 	<string name="uploading_media_item">Lade Medienobjekt # hoch</string>
@@ -119,7 +168,6 @@
 	<string name="upload_failed">Hochladen fehlgeschlagen</string>
 	<string name="invalid_url_message">Bitte überprüfe, ob die eingegebene Blog-URL gültig ist. </string>
 	<string name="view_in_browser">Im Browser anzeigen</string>
-	<string name="reply_please_enter">Bitte gib etwas im Antworten-Feld ein.</string>
 	<string name="untitled">Unbenannt</string>
 	<string name="title_post_required">Bitte füge etwas Inhalt ein oder hänge ein Medienobjekt an.</string>
 	<string name="empty_fields">Kein Inhalt gefunden</string>
@@ -157,6 +205,7 @@
 	<string name="username_password_required">Benutzername und Password werden benötigt.</string>
 	<string name="title">Titel</string>
 	<string name="tags_separate_with_commas">Tags (durch Kommas getrennt)</string>
+	<string name="categories">Kategorien</string>
 	<string name="moderating_comments">Kommentare moderieren</string>
 	<string name="load_more">Mehr laden</string>
 	<string name="tab_stats">Statistiken</string>
@@ -239,9 +288,8 @@
 	<string name="reply_enter">Gib eine Antwort ein:</string>
 	<string name="reply_send">Antwort senden</string>
 	<string name="reply_to_comment">Auf Kommentar antworten</string>
-	<string name="reply_required">Benötigtes Feld</string>
+	<string name="reply_please_enter">Bitte gib eine Antwort ein.</string>
 	<string name="preview">Vorschau</string>
-	<string name="loading">Lade...</string>
 	<string name="on">zu</string>
 	<string name="approved">Freigegeben</string>
 	<string name="unapproved">Abgelehnt</string>
@@ -261,9 +309,26 @@
 	<string name="mark_unapproved">Ablehnen</string>
 	<string name="reply">Antworten</string>
 	<string name="account_setup">Account einrichten</string>
-	<string name="attempting_configure">Versuche, den Account einzurichten.</string>
 	<string name="cancel_draft">Entwurf abbrechen</string>
 	<string name="publish">Veröffentlichen?</string>
 	<string name="yes">Ja</string>
 	<string name="no">Nein</string>
+	<string-array name="alignment_array">
+		<item>Keine</item>
+		<item>Links</item>
+		<item>Zentriert</item>
+		<item>Rechts</item>
+	</string-array>
+	<string-array name="post_formats_array">
+		<item>Kurzmitteilung</item>
+		<item>Audio</item>
+		<item>Chat</item>
+		<item>Galerie</item>
+		<item>Bild</item>
+		<item>Link</item>
+		<item>Zitat</item>
+		<item>Standard</item>
+		<item>Status</item>
+		<item>Video</item>
+	</string-array>
 </resources>

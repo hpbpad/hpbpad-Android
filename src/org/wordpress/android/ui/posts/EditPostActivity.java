@@ -1,6 +1,8 @@
 package org.wordpress.android.ui.posts;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Vector;
@@ -27,7 +29,6 @@ import android.widget.Toast;
 import com.justsystems.hpb.pad.R;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 
 import org.wordpress.android.Constants;
 import org.wordpress.android.WordPress;
@@ -35,9 +36,7 @@ import org.wordpress.android.models.MediaFile;
 import org.wordpress.android.models.Post;
 import org.wordpress.android.models.Postable;
 import org.wordpress.android.task.MultiAsyncTask;
-import org.wordpress.android.ui.list.PagesActivity;
-import org.wordpress.android.ui.list.PostsActivity;
-import org.wordpress.android.util.EscapeUtils;
+import org.wordpress.android.util.JSONUtil;
 import org.wordpress.android.util.LocationHelper;
 import org.wordpress.android.util.LocationHelper.LocationResult;
 import org.wordpress.android.util.WPHtml;
@@ -60,26 +59,20 @@ public final class EditPostActivity extends AbsEditActivity {
         mTagsEditText = (EditText) findViewById(R.id.tags);
         mTagsEditText.setVisibility(View.VISIBLE);
 
-        mCategories = new JSONArray();
+        mCategories = new ArrayList<String>();
         mSelectedCategories = new Vector<String>();
 
         getLocationProvider();
         if (!mIsNew) {
             this.mPost = (Post) super.mPostable;
             if (!mIsPage) {
-                if (mPost.getCategories() != null) {
-                    mCategories = mPost.getCategories();
-                    if (!mCategories.equals("")) {
-
-                        for (int i = 0; i < mCategories.length(); i++) {
-                            try {
-                                mSelectedCategories.add(mCategories
-                                        .getString(i));
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
+                if (mPost.getJSONCategories() != null) {
+                    mCategories = JSONUtil.fromJSONArrayToStringList(mPost
+                            .getJSONCategories());
+                    if (mCategories.size() > 0) {
+                        for (int i = 0; i < mCategories.size(); i++) {
+                            mSelectedCategories.add(mCategories.get(i));
                         }
-                        mCategoriesText.setText(getCategoriesCSV(mCategories));
                     }
                 }
 
@@ -96,6 +89,7 @@ public final class EditPostActivity extends AbsEditActivity {
                 mTagsEditText.setText(tags);
             }
         }
+        populateSelectedCategories();
     }
 
     private void getLocationProvider() {
@@ -115,7 +109,7 @@ public final class EditPostActivity extends AbsEditActivity {
 
     private void enableLBSButtons() {
         mLocationHelper = new LocationHelper();
-        ((RelativeLayout) findViewById(R.id.section3))
+        ((RelativeLayout) findViewById(R.id.sectionLocation))
                 .setVisibility(View.VISIBLE);
         Button viewMap = (Button) findViewById(R.id.viewMap);
         Button updateLocation = (Button) findViewById(R.id.updateLocation);
@@ -181,20 +175,9 @@ public final class EditPostActivity extends AbsEditActivity {
         if (data != null
                 && requestCode == ACTIVITY_REQUEST_CODE_SELECT_CATEGORIES) {
             Bundle extras = data.getExtras();
-            String cats = extras.getString("selectedCategories");
-            String[] splitCats = cats.split(",");
-            if (splitCats.length < 1)
-                return;
-            mCategories = new JSONArray();
-            for (int i = 0; i < splitCats.length; i++) {
-                mCategories.put(splitCats[i]);
-            }
-            final String str = getCategoriesCSV(mCategories);
-            if (str != null && str.length() > 0) {
-                mCategoriesText.setText(getCategoriesCSV(mCategories));
-            } else {
-                mCategoriesText.setText(getString(R.string.none));
-            }
+            mCategories = (ArrayList<String>) extras
+                    .getSerializable("selectedCategories");
+            populateSelectedCategories();
         }
     }
 
@@ -217,14 +200,15 @@ public final class EditPostActivity extends AbsEditActivity {
         }
     };
 
-    protected boolean savePost(boolean autoSave) {
+    protected boolean savePost(boolean isAutoSave, boolean isDraftSave) {
 
         String title = mTitleEditText.getText().toString();
         String password = mPasswordEditText.getText().toString();
         String pubDate = mPubDateText.getText().toString();
+        String excerpt = mExcerptEditText.getText().toString();
         String content = "";
 
-        if (mLocalDraft || mIsNew && !autoSave) {
+        if (mLocalDraft || mIsNew && !isAutoSave) {
             Editable e = mContentEditText.getText();
             if (android.os.Build.VERSION.SDK_INT >= 14) {
                 // remove suggestion spans, they cause craziness in
@@ -237,7 +221,7 @@ public final class EditPostActivity extends AbsEditActivity {
                         e.removeSpan(style[i]);
                 }
             }
-            content = EscapeUtils.unescapeHtml(WPHtml.toHtml(e));
+            content = WPHtml.toHtml(e);
             // replace duplicate <p> tags so there's not duplicates, trac #86
             content = content.replace("<p><p>", "<p>");
             content = content.replace("</p></p>", "</p>");
@@ -271,7 +255,7 @@ public final class EditPostActivity extends AbsEditActivity {
         String images = "";
         boolean success = false;
 
-        if (content.equals("") && !autoSave) {
+        if (content.equals("") && !isAutoSave && !isDraftSave) {
             AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(
                     EditPostActivity.this);
             dialogBuilder.setTitle(getResources()
@@ -315,14 +299,13 @@ public final class EditPostActivity extends AbsEditActivity {
                         mf.save();
 
                         int tagStart = s.getSpanStart(wpIS);
-                        if (!autoSave) {
+                        if (!isAutoSave) {
                             s.removeSpan(wpIS);
                             s.insert(tagStart, "<img android-uri=\""
                                     + wpIS.getImageSource().toString()
                                     + "\" />");
                             if (mLocalDraft)
-                                content = EscapeUtils.unescapeHtml(WPHtml
-                                        .toHtml(s));
+                                content = WPHtml.toHtml(s);
                             else
                                 content = s.toString();
                         }
@@ -347,9 +330,6 @@ public final class EditPostActivity extends AbsEditActivity {
             case 3:
                 status = "private";
                 break;
-            case 4:
-                status = "localdraft";
-                break;
             }
 
             Double latitude = 0.0;
@@ -366,10 +346,13 @@ public final class EditPostActivity extends AbsEditActivity {
             }
 
             if (mIsNew) {
-                mPost = new Post(mBlogID, title, content, images,
-                        pubDateTimestamp, mCategories.toString(), tags, status,
-                        password, latitude, longitude, mIsPage, postFormat,
-                        true, false);
+
+                JSONArray categorisList = JSONUtil
+                        .fromStringListToJSONArray(mCategories);
+                mPost = new Post(mBlogID, title, content, excerpt, images,
+                        pubDateTimestamp, categorisList.toString(), tags,
+                        status, password, latitude, longitude, mIsPage,
+                        postFormat, true, false);
                 mPost.setLocalDraft(true);
 
                 // split up the post content if there's a more tag
@@ -385,7 +368,6 @@ public final class EditPostActivity extends AbsEditActivity {
 
                 if (success) {
                     mIsNew = false;
-                    mIsNewDraft = true;
                 }
 
                 mPost.deleteMediaFiles();
@@ -426,6 +408,7 @@ public final class EditPostActivity extends AbsEditActivity {
                 }
 
                 mPost.setTitle(title);
+                mPost.setExcerpt(excerpt);
                 // split up the post content if there's a more tag
                 if (mLocalDraft && content.indexOf(moreTag) >= 0) {
                     mPost.setDescription(content.substring(0,
@@ -439,7 +422,7 @@ public final class EditPostActivity extends AbsEditActivity {
                 }
                 mPost.setMediaPaths(images);
                 mPost.setDate_created_gmt(pubDateTimestamp);
-                mPost.setCategories(mCategories);
+                mPost.setJSONCategories(new JSONArray(mCategories));
                 mPost.setMt_keywords(tags);
                 mPost.setPost_status(status);
                 mPost.setWP_password(password);
@@ -544,12 +527,15 @@ public final class EditPostActivity extends AbsEditActivity {
     protected void startCategoryActivity() {
         Bundle bundle = new Bundle();
         bundle.putInt("id", mBlogID);
-        if (mCategories.length() > 0) {
-            bundle.putString("categoriesCSV", getCategoriesCSV(mCategories));
+        if (mCategories.size() > 0) {
+            bundle.putSerializable("categories", new HashSet<String>(
+                    mCategories));
         }
-        Intent i1 = new Intent(EditPostActivity.this,
+        Intent categoriesIntent = new Intent(EditPostActivity.this,
                 SelectCategoriesActivity.class);
-        i1.putExtras(bundle);
-        startActivityForResult(i1, ACTIVITY_REQUEST_CODE_SELECT_CATEGORIES);
+        categoriesIntent.putExtras(bundle);
+        startActivityForResult(categoriesIntent,
+                ACTIVITY_REQUEST_CODE_SELECT_CATEGORIES);
+
     }
 }

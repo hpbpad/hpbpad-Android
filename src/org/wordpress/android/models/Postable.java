@@ -16,6 +16,10 @@ public interface Postable {
 
     public abstract String getContent();
 
+    public abstract String getExcerpt();
+
+    public abstract void setExcerpt(String excerpt);
+
     public abstract String getPostStatus();
 
     public abstract String getPostFormat();
@@ -39,4 +43,6 @@ public interface Postable {
     public abstract boolean update();
 
     public abstract void delete();
+
+    public abstract void setQuickPostType(String type);
 }

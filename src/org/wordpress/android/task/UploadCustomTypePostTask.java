@@ -22,7 +22,7 @@ import org.xmlrpc.android.XMLRPCException;
 import org.wordpress.android.models.CustomTypePost;
 import org.wordpress.android.models.Post;
 import org.wordpress.android.models.Term;
-import org.wordpress.android.ui.list.CustomPostTypePostsActivity;
+import org.wordpress.android.ui.posts.CustomPostTypePostsActivity;
 import org.wordpress.android.util.PostUploadService;
 
 public final class UploadCustomTypePostTask extends AbsUploadTask {
@@ -83,8 +83,8 @@ public final class UploadCustomTypePostTask extends AbsUploadTask {
         contentStruct.put("post_status", customPost.getPostStatus());
         contentStruct.put("post_title", customPost.getTitle());
         // contentStruct.put("post_author", customPost.getPost_author());
-        if (customPost.getPost_excerpt() != null)
-            contentStruct.put("post_excerpt", customPost.getPost_excerpt());
+        if (customPost.getExcerpt() != null)
+            contentStruct.put("post_excerpt", customPost.getExcerpt());
 
         contentStruct.put("post_content", descriptionContent);
 

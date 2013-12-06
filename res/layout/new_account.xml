@@ -19,7 +19,8 @@
 		<Button android:id="@+id/dotcomExisting" android:layout_width="280dp"
 			android:layout_height="wrap_content" android:textSize="14sp"
 			android:textColor="@android:color/white" android:textStyle="bold"
-			android:text="@string/login_wpdotcom" android:background="@drawable/login_button_bg" />
+			android:text="@string/login_wpdotcom" android:ellipsize="end"
+			android:maxLines="1" android:background="@drawable/login_button_bg" />
 
 	</LinearLayout>
 </ScrollView>

@@ -26,13 +26,10 @@
 		<item name="actionBarWidgetTheme">@style/Theme.wordpress.widget</item>
 
 		<item name="menuDrawerStyle">@style/MenuDrawer</item>
+
 	</style>
 
-	<style name="WordPressHomeAsUpCustomized" parent="WordPress">
-		<item name="homeAsUpIndicator">@drawable/ic_actionbar_sub</item>
-	</style>
-
-	<style name="WordPressNoTitle" parent="WordPressHomeAsUpCustomized">
+	<style name="WordPressNoTitle" parent="WordPress">
 		<item name="actionBarStyle">@style/wordpress_no_title_ActionBar</item>
 	</style>
 
@@ -206,19 +203,26 @@
 	</style>
 
 	<style name="SeoTitle">
-		<item name="android:background">@drawable/seo_title</item>
 		<item name="android:textSize">20sp</item>
 		<item name="android:layout_marginTop">8dp</item>
 		<item name="android:layout_marginBottom">4dp</item>
 		<item name="android:layout_marginLeft">12dp</item>
 		<item name="android:layout_marginRight">12dp</item>
-		<item name="android:textColor">#FFFFFF</item>
+		<item name="android:textColor">#000000</item>
+	</style>
+
+	<style name="SeoPreview">
+		<item name="android:background">@drawable/simple_textbox_bg</item>
+		<item name="android:textSize">20sp</item>
+		<item name="android:layout_marginTop">4dp</item>
+		<item name="android:layout_marginLeft">12dp</item>
+		<item name="android:layout_marginRight">12dp</item>
+		<item name="android:textColor">#000000</item>
 	</style>
 
 	<style name="SeoDesc">
 		<item name="android:background">@drawable/seo_desc</item>
 		<item name="android:textSize">14sp</item>
-		<item name="android:layout_marginTop">4dp</item>
 		<item name="android:layout_marginBottom">8dp</item>
 		<item name="android:layout_marginLeft">12dp</item>
 		<item name="android:layout_marginRight">12dp</item>

@@ -1,9 +1,6 @@
 package org.wordpress.android.ui.comments;
 
-import java.math.BigInteger;
 import java.net.URI;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +19,6 @@ import android.os.Looper;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ListFragment;
-import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
@@ -40,17 +36,13 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewSwitcher;
 
-import com.commonsware.cwac.cache.SimpleWebImageCache;
-import com.commonsware.cwac.thumbnail.ThumbnailAdapter;
-import com.commonsware.cwac.thumbnail.ThumbnailBus;
-import com.commonsware.cwac.thumbnail.ThumbnailMessage;
+import com.android.volley.toolbox.NetworkImageView;
 import com.justsystems.hpb.pad.R;
 
 import org.xmlrpc.android.ApiHelper;
@@ -60,12 +52,10 @@ import org.xmlrpc.android.XMLRPCFault;
 
 import org.wordpress.android.WordPress;
 import org.wordpress.android.models.Comment;
-import org.wordpress.android.util.EscapeUtils;
+import org.wordpress.android.util.StringUtils;
 import org.wordpress.android.util.WPAlertDialogFragment;
 
 public class CommentsListFragment extends ListFragment {
-    private static final int[] IMAGE_IDS = { R.id.avatar };
-    public ThumbnailAdapter thumbs = null;
     public ArrayList<Comment> model = null;
     private XMLRPCClient client;
     private String accountName = "", moderateErrorMsg = "";
@@ -109,15 +99,17 @@ public class CommentsListFragment extends ListFragment {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        hideModerationBar(); //The app doesn't remember the selection state on resume, so don't show the bar.
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
 
         View v = inflater.inflate(R.layout.view_comments_fragment, container,
                 false);
-
-        ListView listView = (ListView) v.findViewById(android.R.id.list);
-        listView.setSelector(getResources().getDrawable(
-                R.drawable.list_bg_selector));
 
         // create the ViewSwitcher in the current context
         switcher = new ViewSwitcher(getActivity().getApplicationContext());
@@ -138,13 +130,6 @@ public class CommentsListFragment extends ListFragment {
 
         switcher.addView(footer);
         switcher.addView(progress);
-
-        /*
-         * if (fromNotification) // dismiss the notification { //
-         * NotificationManager nm = (NotificationManager) //
-         * getSystemService(NOTIFICATION_SERVICE); // nm.cancel(22 +
-         * Integer.valueOf(id)); // loadComments(false, false); }
-         */
 
         getActivity().setTitle(accountName + " - Moderate Comments");
 
@@ -225,6 +210,12 @@ public class CommentsListFragment extends ListFragment {
                 Map<String, String> contentHash, postHash = new HashMap<String, String>();
                 contentHash = (Map<String, String>) allComments
                         .get(curCommentID);
+
+                if (contentHash.get("status").equals(newStatus)) {
+                    checkedComments.set(i, "false");
+                    continue;
+                }
+
                 postHash.put("status", newStatus);
                 postHash.put("content", contentHash.get("comment"));
                 postHash.put("author", contentHash.get("author"));
@@ -243,6 +234,7 @@ public class CommentsListFragment extends ListFragment {
                     if (bResult) {
                         checkedComments.set(i, "false");
                         listRow.status = newStatus;
+                        contentHash.put("status", newStatus);
                         model.set(i, listRow);
                         WordPress.wpDB.updateCommentStatus(
                                 WordPress.currentBlog.getId(),
@@ -267,13 +259,13 @@ public class CommentsListFragment extends ListFragment {
                             Toast.LENGTH_SHORT).show();
                     checkedCommentTotal = 0;
                     hideModerationBar();
-                    thumbs.notifyDataSetChanged();
+                    getListView().invalidateViews();
                 } else {
                     // there was an xmlrpc error
                     if (!getActivity().isFinishing()) {
                         checkedCommentTotal = 0;
                         hideModerationBar();
-                        thumbs.notifyDataSetChanged();
+                        getListView().invalidateViews();
                         FragmentTransaction ft = getFragmentManager()
                                 .beginTransaction();
                         WPAlertDialogFragment alert = WPAlertDialogFragment
@@ -354,10 +346,10 @@ public class CommentsListFragment extends ListFragment {
         String author, postID, comment, dateCreatedFormatted, status, authorEmail, authorURL, postTitle;
         int commentID;
 
-        List<Map<String, Object>> loadedPosts = WordPress.wpDB
+        List<Map<String, Object>> loadedComments = WordPress.wpDB
                 .loadComments(WordPress.currentBlog.getId());
-        if (loadedPosts != null) {
-            numRecords = loadedPosts.size();
+        if (loadedComments != null) {
+            numRecords = loadedComments.size();
             if (refreshOnly) {
                 if (model != null) {
                     model.clear();
@@ -367,25 +359,25 @@ public class CommentsListFragment extends ListFragment {
             }
 
             checkedComments = new Vector<String>();
-            for (int i = 0; i < loadedPosts.size(); i++) {
+            for (int i = 0; i < loadedComments.size(); i++) {
                 checkedComments.add(i, "false");
-                Map<String, Object> contentHash = loadedPosts.get(i);
+                Map<String, Object> contentHash = loadedComments.get(i);
                 allComments.put((Integer) contentHash.get("commentID"),
                         contentHash);
-                author = EscapeUtils.unescapeHtml(contentHash.get("author")
+                author = StringUtils.unescapeHTML(contentHash.get("author")
                         .toString());
                 commentID = (Integer) contentHash.get("commentID");
                 postID = contentHash.get("postID").toString();
-                comment = EscapeUtils.unescapeHtml(contentHash.get("comment")
+                comment = StringUtils.unescapeHTML(contentHash.get("comment")
                         .toString());
                 dateCreatedFormatted = contentHash.get("commentDateFormatted")
                         .toString();
                 status = contentHash.get("status").toString();
-                authorEmail = EscapeUtils.unescapeHtml(contentHash.get("email")
+                authorEmail = StringUtils.unescapeHTML(contentHash.get("email")
                         .toString());
-                authorURL = EscapeUtils.unescapeHtml(contentHash.get("url")
+                authorURL = StringUtils.unescapeHTML(contentHash.get("url")
                         .toString());
-                postTitle = EscapeUtils.unescapeHtml(contentHash.get(
+                postTitle = StringUtils.unescapeHTML(contentHash.get(
                         "postTitle").toString());
 
                 if (model == null) {
@@ -397,28 +389,17 @@ public class CommentsListFragment extends ListFragment {
                         dateCreatedFormatted, comment, status, postTitle,
                         authorURL, authorEmail, URI
                                 .create("http://gravatar.com/avatar/"
-                                        + getMd5Hash(authorEmail.trim())
-                                        + "?s=140&d=404")));
+                                        + StringUtils.getMd5Hash(authorEmail
+                                                .trim()) + "?s=140&d=404")));
             }
 
             if (!refreshOnly) {
-                try {
-                    ThumbnailBus bus = new ThumbnailBus();
-                    thumbs = new ThumbnailAdapter(
-                            getActivity(),
-                            new CommentAdapter(),
-                            new SimpleWebImageCache<ThumbnailBus, ThumbnailMessage>(
-                                    null, null, 101, bus), IMAGE_IDS);
-                } catch (Exception e1) {
-                    e1.printStackTrace();
-                }
-
                 ListView listView = this.getListView();
                 listView.removeFooterView(switcher);
-                if (loadedPosts.size() % 30 == 0) {
+                if (loadedComments.size() % 30 == 0) {
                     listView.addFooterView(switcher);
                 }
-                setListAdapter(thumbs);
+                setListAdapter(new CommentAdapter());
 
                 listView.setOnItemClickListener(new OnItemClickListener() {
 
@@ -427,7 +408,7 @@ public class CommentsListFragment extends ListFragment {
                         selectedPosition = position;
                         Comment comment = model.get((int) id);
                         onCommentSelectedListener.onCommentSelected(comment);
-                        thumbs.notifyDataSetChanged();
+                        getListView().invalidateViews();
                     }
                 });
 
@@ -482,9 +463,7 @@ public class CommentsListFragment extends ListFragment {
                     }
                 });
             } else {
-                if (thumbs != null) {
-                    thumbs.notifyDataSetChanged();
-                }
+                getListView().invalidateViews();
             }
 
             if (this.shouldSelectAfterLoad) {
@@ -556,20 +535,6 @@ public class CommentsListFragment extends ListFragment {
 
     }
 
-    /*
-     * @Override public Object onRetainNonConfigurationInstance() { return
-     * (model); }
-     */
-
-    private void goBlooey(Throwable t) {
-        Log.e("WordPress", "Exception!", t);
-
-        FragmentTransaction ft = getFragmentManager().beginTransaction();
-        WPAlertDialogFragment alert = WPAlertDialogFragment.newInstance(t
-                .toString());
-        alert.show(ft, "alert");
-    }
-
     class CommentAdapter extends ArrayAdapter<Comment> {
 
         int sdk_version = 7;
@@ -593,8 +558,10 @@ public class CommentsListFragment extends ListFragment {
 
             if (row == null) {
                 LayoutInflater inflater = getActivity().getLayoutInflater();
-
                 row = inflater.inflate(R.layout.comment_row, null);
+                NetworkImageView avatar = (NetworkImageView) row
+                        .findViewById(R.id.avatar);
+                avatar.setDefaultImageResId(R.drawable.placeholder);
                 wrapper = new CommentEntryWrapper(row);
                 row.setTag(wrapper);
             } else {
@@ -613,7 +580,7 @@ public class CommentsListFragment extends ListFragment {
         private TextView comment = null;
         private TextView status = null;
         private TextView postTitle = null;
-        private ImageView avatar = null;
+        private NetworkImageView avatar = null;
         private View row = null;
         private CheckBox bulkCheck = null;
         private RelativeLayout bulkEditGroup = null;
@@ -673,18 +640,12 @@ public class CommentsListFragment extends ListFragment {
                 public void onClick(View arg0) {
                     checkedComments.set(position,
                             String.valueOf(getBulkCheck().isChecked()));
-                    showOrHideModerateButtons();
+                    showOrHideModerationBar();
                 }
             });
 
-            if (s.profileImageUrl != null) {
-                try {
-                    getAvatar().setImageResource(R.drawable.placeholder);
-                    getAvatar().setTag(s.profileImageUrl.toString());
-                } catch (Throwable t) {
-                    goBlooey(t);
-                }
-            }
+            getAvatar().setImageUrl(s.profileImageUrl.toString(),
+                    WordPress.imageLoader);
         }
 
         TextView getName() {
@@ -729,9 +690,9 @@ public class CommentsListFragment extends ListFragment {
             return (postTitle);
         }
 
-        ImageView getAvatar() {
+        NetworkImageView getAvatar() {
             if (avatar == null) {
-                avatar = (ImageView) row.findViewById(R.id.avatar);
+                avatar = (NetworkImageView) row.findViewById(R.id.avatar);
             }
 
             return (avatar);
@@ -754,44 +715,13 @@ public class CommentsListFragment extends ListFragment {
             return (bulkEditGroup);
         }
 
-        protected void showOrHideModerateButtons() {
-            int previousTotal = checkedCommentTotal;
-            checkedCommentTotal = 0;
-            for (int i = 0; i < checkedComments.size(); i++) {
-                if (checkedComments.get(i).equals("true")) {
-                    checkedCommentTotal++;
-                }
-            }
-            if (checkedCommentTotal > 0 && previousTotal == 0) {
-                showModerationBar();
-            }
-            if (checkedCommentTotal == 0 && previousTotal > 0) {
-
-                hideModerationBar();
-
-            }
-
-        }
     }
 
-    public static String getMd5Hash(String input) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] messageDigest = md.digest(input.getBytes());
-            BigInteger number = new BigInteger(1, messageDigest);
-            String md5 = number.toString(16);
-
-            while (md5.length() < 32)
-                md5 = "0" + md5;
-
-            return md5;
-        } catch (NoSuchAlgorithmException e) {
-            Log.e("MD5", e.getLocalizedMessage());
-            return null;
-        }
-    }
-
-    public void hideModerationBar() {
+    protected void hideModerationBar() {
+        RelativeLayout moderationBar = (RelativeLayout) getActivity()
+                .findViewById(R.id.moderationBar);
+        if (moderationBar.getVisibility() == View.INVISIBLE)
+            return;
         AnimationSet set = new AnimationSet(true);
         Animation animation = new AlphaAnimation(1.0f, 0.0f);
         animation.setDuration(500);
@@ -801,17 +731,35 @@ public class CommentsListFragment extends ListFragment {
                 0.0f, Animation.RELATIVE_TO_SELF, 1.0f);
         animation.setDuration(500);
         set.addAnimation(animation);
-        RelativeLayout moderationBar = (RelativeLayout) getActivity()
-                .findViewById(R.id.moderationBar);
         moderationBar.clearAnimation();
         moderationBar.startAnimation(set);
         moderationBar.setVisibility(View.INVISIBLE);
-
     }
 
-    public void showModerationBar() {
-        AnimationSet set = new AnimationSet(true);
+    protected void showOrHideModerationBar() {
+        if (checkedComments == null)
+            return;
 
+        boolean shouldShowModerationBar = false;
+        for (int i = 0; i < checkedComments.size(); i++) {
+            if (checkedComments.get(i).equals("true")) {
+                shouldShowModerationBar = true;
+                break;
+            }
+        }
+
+        if (shouldShowModerationBar)
+            showModerationBar();
+        else
+            hideModerationBar();
+    }
+
+    protected void showModerationBar() {
+        RelativeLayout moderationBar = (RelativeLayout) getActivity()
+                .findViewById(R.id.moderationBar);
+        if (moderationBar.getVisibility() == View.VISIBLE)
+            return;
+        AnimationSet set = new AnimationSet(true);
         Animation animation = new AlphaAnimation(0.0f, 1.0f);
         animation.setDuration(500);
         set.addAnimation(animation);
@@ -820,8 +768,6 @@ public class CommentsListFragment extends ListFragment {
                 1.0f, Animation.RELATIVE_TO_SELF, 0.0f);
         animation.setDuration(500);
         set.addAnimation(animation);
-        RelativeLayout moderationBar = (RelativeLayout) getActivity()
-                .findViewById(R.id.moderationBar);
         moderationBar.setVisibility(View.VISIBLE);
         moderationBar.startAnimation(set);
     }
@@ -1029,18 +975,15 @@ public class CommentsListFragment extends ListFragment {
 
             if (commentsResult == null) {
 
-                if (thumbs != null) {
-                    if (model.size() == 1) {
-                        WordPress.wpDB.clearComments(WordPress.currentBlog
-                                .getId());
-                        model.clear();
-                        allComments.clear();
-                        thumbs.notifyDataSetChanged();
-                        onCommentStatusChangeListener
-                                .onCommentStatusChanged("clear");
-                        WordPress.currentComment = null;
-                        loadComments(false, false);
-                    }
+                if (model != null && model.size() == 1) {
+                    WordPress.wpDB.clearComments(WordPress.currentBlog.getId());
+                    model.clear();
+                    allComments.clear();
+                    getListView().invalidateViews();
+                    onCommentStatusChangeListener
+                            .onCommentStatusChanged("clear");
+                    WordPress.currentComment = null;
+                    loadComments(false, false);
                 }
 
                 onAnimateRefreshButton.onAnimateRefreshButton(false);
@@ -1066,7 +1009,6 @@ public class CommentsListFragment extends ListFragment {
                 if (pd.isShowing()) {
                     pd.dismiss();
                 }
-                onAnimateRefreshButton.onAnimateRefreshButton(false);
             } else {
 
                 allComments.putAll(commentsResult);
@@ -1074,15 +1016,16 @@ public class CommentsListFragment extends ListFragment {
                 if (!doInBackground) {
                     loadComments(refreshOnly, loadMore);
                 }
-
-                onAnimateRefreshButton.onAnimateRefreshButton(false);
-
             }
 
-            if (!loadMore && !doInBackground) {
-                onAnimateRefreshButton.onAnimateRefreshButton(false);
-            } else if (loadMore) {
+            onAnimateRefreshButton.onAnimateRefreshButton(false);
+
+            if (loadMore) {
                 switcher.showPrevious();
+            }
+
+            if (!doInBackground) {
+                showOrHideModerationBar();
             }
 
         }

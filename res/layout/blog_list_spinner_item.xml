@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
-	style="?attr/spinnerDropDownItemStyle" android:singleLine="true"
-	android:layout_width="match_parent" android:layout_height="fill_parent"
-	android:gravity="bottom" android:ellipsize="end" android:textSize="11sp"
-	android:paddingLeft="14dp" />
+	android:id="@android:id/text1" style="?attr/spinnerDropDownItemStyle"
+	android:singleLine="true" android:layout_width="match_parent"
+	android:layout_height="fill_parent" android:gravity="bottom"
+	android:ellipsize="end" android:textSize="11sp" android:paddingLeft="14dp" />
 

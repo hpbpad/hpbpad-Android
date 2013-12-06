@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,12 +21,14 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.database.Cursor;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.TextUtils;
 import android.webkit.MimeTypeMap;
 
 import com.justsystems.hpb.pad.R;
@@ -39,13 +42,13 @@ import org.wordpress.android.models.Blog;
 import org.wordpress.android.models.MediaFile;
 import org.wordpress.android.models.Post;
 import org.wordpress.android.models.Postable;
-import org.wordpress.android.util.EscapeUtils;
 import org.wordpress.android.util.ImageHelper;
 import org.wordpress.android.util.PostUploadService;
 import org.wordpress.android.util.WPHtml;
 import org.wordpress.android.util.WPImageSpan;
 
-abstract class AbsUploadTask extends MultiAsyncTask<Post, Boolean, Boolean> {
+public abstract class AbsUploadTask extends
+        MultiAsyncTask<Post, Boolean, Boolean> {
 
     protected final static String MORE = "<!--more-->";
 
@@ -54,12 +57,11 @@ abstract class AbsUploadTask extends MultiAsyncTask<Post, Boolean, Boolean> {
 
     protected String error = "";
     protected boolean mediaError = false;
-
     protected NotificationManager nm;
     protected int notificationID;
     protected Notification n;
 
-    protected static int featuredImageID = -1;
+    protected int featuredImageID = -1;
 
     public AbsUploadTask(PostUploadService service) {
         this.service = service;
@@ -74,7 +76,7 @@ abstract class AbsUploadTask extends MultiAsyncTask<Post, Boolean, Boolean> {
         } else {
             showErrorNotifination();
         }
-        service.stopSelf();
+        service.postUploaded();
     }
 
     abstract void showErrorNotifination();
@@ -92,7 +94,8 @@ abstract class AbsUploadTask extends MultiAsyncTask<Post, Boolean, Boolean> {
 
         n.setLatestEventInfo(context, message, message, pendingIntent);
 
-        notificationID = 22 + Integer.valueOf(post.getBlog().getId());
+        notificationID = (new Random()).nextInt()
+                + Integer.valueOf(post.getBlog().getId());
         nm.notify(notificationID, n); // needs a unique id
     }
 
@@ -243,7 +246,7 @@ abstract class AbsUploadTask extends MultiAsyncTask<Post, Boolean, Boolean> {
     private String uploadMediaFile(MediaFile mf, Postable post) {
         final Blog blog = post.getBlog();
 
-        String content = null;
+        String content = "";
 
         // image variables
         String finalThumbnailUrl = null;
@@ -253,223 +256,214 @@ abstract class AbsUploadTask extends MultiAsyncTask<Post, Boolean, Boolean> {
         if (mf.getFileName() == null) {
             return "";
         }
-        XMLRPCClient client = new XMLRPCClient(blog.getUrl(),
-                blog.getHttpuser(), blog.getHttppassword());
 
         String curImagePath = "";
 
         curImagePath = mf.getFileName();
 
         if (curImagePath.contains("video")) { // upload the video
+            XMLRPCClient client = new XMLRPCClient(blog.getUrl(),
+                    blog.getHttpuser(), blog.getHttppassword());
             content = doVideo(mf, client, post);
             if (content == null) {
                 return content;
             }
         } else {
-            for (int i = 0; i < 2; i++) {
+            curImagePath = mf.getFileName();
 
-                // create temp file for media upload
-                String tempFileName = "wp-" + System.currentTimeMillis();
+            Uri imageUri = Uri.parse(curImagePath);
+            File jpeg = null;
+            String mimeType = "", orientation = "", path = "";
+
+            if (imageUri.toString().contains("content:")) {
+                String[] projection;
+                Uri imgPath;
+
+                projection = new String[] { Images.Media._ID,
+                        Images.Media.DATA, Images.Media.MIME_TYPE,
+                        Images.Media.ORIENTATION };
+
+                imgPath = imageUri;
+
+                Cursor cur = context.getContentResolver().query(imgPath,
+                        projection, null, null, null);
+                String thumbData = "";
+
+                if (cur.moveToFirst()) {
+
+                    int dataColumn, mimeTypeColumn, orientationColumn;
+
+                    dataColumn = cur.getColumnIndex(Images.Media.DATA);
+                    mimeTypeColumn = cur.getColumnIndex(Images.Media.MIME_TYPE);
+                    orientationColumn = cur
+                            .getColumnIndex(Images.Media.ORIENTATION);
+
+                    orientation = cur.getString(orientationColumn);
+                    thumbData = cur.getString(dataColumn);
+                    mimeType = cur.getString(mimeTypeColumn);
+                    jpeg = new File(thumbData);
+                    path = thumbData;
+                    mf.setFilePath(jpeg.getPath());
+                }
+            } else { // file is not in media library
+                path = imageUri.toString().replace("file://", "");
+                jpeg = new File(path);
+                String extension = MimeTypeMap.getFileExtensionFromUrl(path);
+                if (extension != null) {
+                    MimeTypeMap mime = MimeTypeMap.getSingleton();
+                    mimeType = mime.getMimeTypeFromExtension(extension);
+                    if (mimeType == null)
+                        mimeType = "image/jpeg";
+                }
+                mf.setFilePath(path);
+            }
+
+            // check if the file exists
+            if (jpeg == null) {
+                error = context.getString(R.string.file_not_found);
+                mediaError = true;
+                return null;
+            }
+
+            ImageHelper ih = new ImageHelper();
+            orientation = ih.getExifOrientation(path, orientation);
+
+            String imageTitle = jpeg.getName();
+
+            String resizedPictureURL = null;
+
+            //We need to upload a resized version of the picture when the blog settings != original size, or when 
+            //the user has selected a smaller size for the current picture in the picture settings screen
+            boolean shouldUploadResizedVersion = !post.getBlog()
+                    .getMaxImageWidth().equals("Original Size");
+            if (shouldUploadResizedVersion == false) {
+                //check the picture settings
+                int pictureSettingWidth = mf.getWidth();
+
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inJustDecodeBounds = true;
+                BitmapFactory.decodeFile(path, options);
+                int imageHeight = options.outHeight;
+                int imageWidth = options.outWidth;
+                int[] dimensions = { imageWidth, imageHeight };
+                if (dimensions[0] != 0 && dimensions[0] != pictureSettingWidth) {
+                    shouldUploadResizedVersion = true;
+                }
+            }
+
+            if (shouldUploadResizedVersion) {
+                byte[] bytes;
+                byte[] finalBytes = null;
                 try {
-                    context.openFileOutput(tempFileName, Context.MODE_PRIVATE);
+                    bytes = new byte[(int) jpeg.length()];
+                } catch (OutOfMemoryError er) {
+                    error = context.getString(R.string.out_of_memory);
+                    mediaError = true;
+                    return null;
+                }
+
+                DataInputStream in = null;
+                try {
+                    in = new DataInputStream(new FileInputStream(jpeg));
                 } catch (FileNotFoundException e) {
-                    mediaError = true;
-                    error = context.getString(R.string.file_not_found);
-                    return null;
+                    e.printStackTrace();
+                }
+                try {
+                    in.readFully(bytes);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
 
-                File tempFile = context.getFileStreamPath(tempFileName);
+                String width = String.valueOf(mf.getWidth());
 
-                curImagePath = mf.getFileName();
+                ImageHelper ih2 = new ImageHelper();
+                finalBytes = ih2.createThumbnail(bytes, width, orientation,
+                        false);
 
-                if (i != 0
-                        && (!blog.isFullSizeImage() || blog.getMaxImageWidth()
-                                .equals("Original Size"))
-                        && !blog.isScaledImage()) {
-                    continue;
-                }
-                Uri imageUri = Uri.parse(curImagePath);
-                File jpeg = null;
-                String mimeType = "", orientation = "", path = "";
-
-                if (imageUri.toString().contains("content:")) {
-                    String[] projection;
-                    Uri imgPath;
-
-                    projection = new String[] { Images.Media._ID,
-                            Images.Media.DATA, Images.Media.MIME_TYPE,
-                            Images.Media.ORIENTATION };
-
-                    imgPath = imageUri;
-
-                    Cursor cur = context.getContentResolver().query(imgPath,
-                            projection, null, null, null);
-                    String thumbData = "";
-
-                    if (cur.moveToFirst()) {
-
-                        int dataColumn, mimeTypeColumn, orientationColumn;
-
-                        dataColumn = cur.getColumnIndex(Images.Media.DATA);
-                        mimeTypeColumn = cur
-                                .getColumnIndex(Images.Media.MIME_TYPE);
-                        orientationColumn = cur
-                                .getColumnIndex(Images.Media.ORIENTATION);
-
-                        orientation = cur.getString(orientationColumn);
-                        thumbData = cur.getString(dataColumn);
-                        mimeType = cur.getString(mimeTypeColumn);
-                        jpeg = new File(thumbData);
-                        path = thumbData;
-                        mf.setFilePath(jpeg.getPath());
-                    }
-                    cur.close();
-                } else { // file is not in media library
-                    path = imageUri.toString().replace("file://", "");
-                    jpeg = new File(path);
-                    String extension = MimeTypeMap
-                            .getFileExtensionFromUrl(path);
-                    if (extension != null) {
-                        MimeTypeMap mime = MimeTypeMap.getSingleton();
-                        mimeType = mime.getMimeTypeFromExtension(extension);
-                        if (mimeType == null)
-                            mimeType = "image/jpeg";
-                    }
-                    mf.setFilePath(path);
-                }
-
-                // check if the file exists
-                if (jpeg == null) {
-                    error = context.getString(R.string.file_not_found);
+                if (finalBytes == null) {
+                    error = context.getString(R.string.out_of_memory);
                     mediaError = true;
                     return null;
                 }
 
-                ImageHelper ih = new ImageHelper();
-                orientation = ih.getExifOrientation(path, orientation);
-
-                String imageTitle = jpeg.getName();
-
-                byte[] finalBytes = getFinalByte(i, mf, blog, jpeg, orientation);
-
-                // try to upload the image
+                //upload picture
                 Map<String, Object> m = new HashMap<String, Object>();
 
                 m.put("name", imageTitle);
                 m.put("type", mimeType);
-                if (i == 0 || blog.isScaledImage()) {
-                    m.put("bits", finalBytes);
-                } else {
-                    m.put("bits", mf);
-                }
+                m.put("bits", finalBytes);
                 m.put("overwrite", true);
 
-                Object[] params = { 1, blog.getUsername(), blog.getPassword(),
-                        m };
-
-                Object result = null;
-
-                try {
-                    result = (Object) client.callUploadFile("wp.uploadFile",
-                            params, tempFile);
-                } catch (XMLRPCException e) {
-                    error = context.getResources().getString(
-                            R.string.error_media_upload)
-                            + ": " + cleanXMLRPCErrorMessage(e.getMessage());
-                    mediaError = true;
+                resizedPictureURL = uploadPicture(post, m, mf);
+                if (resizedPictureURL == null)
                     return null;
-                }
+            }
 
-                Map<?, ?> contentHash = (HashMap<?, ?>) result;
+            String fullsizeURL = null;
+            //Upload the full size picture if "Original Size" is selected in settings, or if 'link to full size' is checked.
+            if (!shouldUploadResizedVersion || post.getBlog().isFullSizeImage()) {
+                // try to upload the image
+                Map<String, Object> m = new HashMap<String, Object>();
+                m.put("name", imageTitle);
+                m.put("type", mimeType);
+                m.put("bits", mf);
+                m.put("overwrite", true);
 
-                String resultURL = contentHash.get("url").toString();
+                fullsizeURL = uploadPicture(post, m, mf);
+                if (fullsizeURL == null)
+                    return null;
+            }
 
-                if (mf.isFeatured()) {
-                    try {
-                        if (contentHash.get("id") != null) {
-                            featuredImageID = Integer.parseInt(contentHash.get(
-                                    "id").toString());
-                            if (!mf.isFeaturedInPost())
-                                return "";
-                        }
-                    } catch (NumberFormatException e) {
-                        e.printStackTrace();
-                    }
-                }
+            String alignment = "";
+            switch (mf.getHorizontalAlignment()) {
+            case 0:
+                alignment = "alignnone";
+                break;
+            case 1:
+                alignment = "alignleft";
+                break;
+            case 2:
+                alignment = "aligncenter";
+                break;
+            case 3:
+                alignment = "alignright";
+                break;
+            }
 
-                if (i == 0) {
-                    finalThumbnailUrl = resultURL;
-                } else {
-                    if (post.getBlog().isFullSizeImage()
-                            || post.getBlog().isScaledImage()) {
-                        finalImageUrl = resultURL;
-                    } else {
-                        finalImageUrl = "";
-                    }
-                }
+            String alignmentCSS = "class=\"" + alignment + " size-full\" ";
 
-                String alignment = "";
-                switch (mf.getHorizontalAlignment()) {
-                case 0:
-                    alignment = "alignnone";
-                    break;
-                case 1:
-                    alignment = "alignleft";
-                    break;
-                case 2:
-                    alignment = "aligncenter";
-                    break;
-                case 3:
-                    alignment = "alignright";
-                    break;
-                }
+            //Check if we uploaded a featured picture that is not added to the post content (normal case)
+            if ((fullsizeURL != null && fullsizeURL.equalsIgnoreCase(""))
+                    || (resizedPictureURL != null && resizedPictureURL
+                            .equalsIgnoreCase(""))) {
+                return ""; //Not featured in post. Do not add to the content.
+            }
 
-                String alignmentCSS = "class=\"" + alignment + " size-full\" ";
-                if (resultURL != null) {
-                    if (i != 0
-                            && (blog.isFullSizeImage() || blog.isScaledImage())) {
-                        content = "<a href=\"" + finalImageUrl
-                                + "\"><img title=\"" + mf.getTitle() + "\" "
-                                + alignmentCSS + "alt=\"image\" src=\""
-                                + finalThumbnailUrl + "\" /></a>";
-                    } else {
-                        if (i == 0
-                                && (blog.isFullSizeImage() == false && !post
-                                        .getBlog().isScaledImage())
-                                || (blog.getMaxImageWidth().equals(
-                                        "Original Size") && !post.getBlog()
-                                        .isScaledImage())) {
-                            content = "<a href=\"" + finalThumbnailUrl
-                                    + "\"><img title=\"" + mf.getTitle()
-                                    + "\" " + alignmentCSS
-                                    + "alt=\"image\" src=\""
-                                    + finalThumbnailUrl + "\" /></a>";
-                        }
-                    }
+            if (fullsizeURL != null && resizedPictureURL != null) {
 
-                    // XXX
-                    if (content == null) {
-                        content = "";
-                    }
+            } else if (fullsizeURL == null) {
+                fullsizeURL = resizedPictureURL;
+            } else {
+                resizedPictureURL = fullsizeURL;
+            }
 
-                    if ((i == 0
-                            && (!blog.isFullSizeImage() && !blog
-                                    .isScaledImage()) || (blog
-                            .getMaxImageWidth().equals("Original Size") && !blog
-                            .isScaledImage()))
-                            || i == 1) {
-                        if (!mf.getCaption().equals("")) {
-                            content = String
-                                    .format("[caption id=\"\" align=\"%s\" width=\"%d\" caption=\"%s\"]%s[/caption]",
-                                            alignment, mf.getWidth(),
-                                            EscapeUtils.escapeHtml(mf
-                                                    .getCaption()), content);
-                        }
-                    }
-                }
+            content = content + "<a href=\"" + fullsizeURL + "\"><img title=\""
+                    + mf.getTitle() + "\" " + alignmentCSS
+                    + "alt=\"image\" src=\"" + resizedPictureURL + "\" /></a>";
 
-            }// end image check
+            if (!mf.getCaption().equals("")) {
+                content = String
+                        .format("[caption id=\"\" align=\"%s\" width=\"%d\" caption=\"%s\"]%s[/caption]",
+                                alignment, mf.getWidth(),
+                                TextUtils.htmlEncode(mf.getCaption()), content);
+            }
         }
+
         return content;
     }
 
@@ -558,7 +552,7 @@ abstract class AbsUploadTask extends MultiAsyncTask<Post, Boolean, Boolean> {
         Object result = null;
 
         try {
-            result = client.callUploadFile("wp.uploadFile", params, tempFile);
+            result = client.call("wp.uploadFile", params, tempFile);
         } catch (XMLRPCException e) {
             error = context.getResources().getString(
                     R.string.error_media_upload)
@@ -606,51 +600,57 @@ abstract class AbsUploadTask extends MultiAsyncTask<Post, Boolean, Boolean> {
         return params;
     }
 
-    private byte[] getFinalByte(int i, MediaFile mf, Blog blog, File jpeg,
-            String orientation) {
-        if (i != 0 && !blog.isScaledImage()) {
-            return null;
-        }
-        byte[] result;
-        byte[] bytes;
-        try {
-            bytes = new byte[(int) jpeg.length()];
-        } catch (OutOfMemoryError er) {
-            error = context.getString(R.string.out_of_memory);
-            mediaError = true;
-            return null;
-        }
+    private String uploadPicture(Postable post,
+            Map<String, Object> pictureParams, MediaFile mf) {
 
-        DataInputStream in = null;
+        XMLRPCClient client = new XMLRPCClient(post.getBlog().getUrl(), post
+                .getBlog().getHttpuser(), post.getBlog().getHttppassword());
+
+        // create temp file for media upload
+        String tempFileName = "wp-" + System.currentTimeMillis();
         try {
-            in = new DataInputStream(new FileInputStream(jpeg));
+            context.openFileOutput(tempFileName, Context.MODE_PRIVATE);
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        try {
-            in.readFully(bytes);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            in.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        String width = String.valueOf(i == 0 ? mf.getWidth() : blog
-                .getScaledImageWidth());
-        if (blog.getMaxImageWidth().equals("Original Size") && i == 0)
-            width = "Original Size";
-
-        ImageHelper ih2 = new ImageHelper();
-        result = ih2.createThumbnail(bytes, width, orientation, false);
-
-        if (result == null) {
-            error = context.getString(R.string.out_of_memory);
             mediaError = true;
+            error = context.getString(R.string.file_not_found);
+            return null;
         }
-        return result;
+
+        File tempFile = context.getFileStreamPath(tempFileName);
+
+        Object[] params = { 1, post.getBlog().getUsername(),
+                post.getBlog().getPassword(), pictureParams };
+
+        Object result = null;
+
+        try {
+            result = (Object) client.call("wp.uploadFile", params, tempFile);
+        } catch (XMLRPCException e) {
+            error = context.getResources().getString(
+                    R.string.error_media_upload)
+                    + ": " + cleanXMLRPCErrorMessage(e.getMessage());
+            mediaError = true;
+            return null;
+        }
+
+        Map<?, ?> contentHash = (HashMap<?, ?>) result;
+
+        String pictureURL = contentHash.get("url").toString();
+
+        if (mf.isFeatured()) {
+            try {
+                if (contentHash.get("id") != null) {
+                    featuredImageID = Integer.parseInt(contentHash.get("id")
+                            .toString());
+                    if (!mf.isFeaturedInPost())
+                        return "";
+                }
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return pictureURL;
     }
 
     protected String cleanXMLRPCErrorMessage(String message) {
@@ -665,4 +665,5 @@ abstract class AbsUploadTask extends MultiAsyncTask<Post, Boolean, Boolean> {
             return "";
         }
     }
+
 }

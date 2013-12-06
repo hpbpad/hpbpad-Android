@@ -35,12 +35,7 @@
 		<item name="android:textColor">#FF464646</item>
 	</style>
 
-	<style name="WordPressHomeAsUpCustomized" parent="WordPress">
-		<item name="android:homeAsUpIndicator">@drawable/ic_actionbar_sub</item>
-		<item name="homeAsUpIndicator">@drawable/ic_actionbar_sub</item>
-	</style>
-
-	<style name="WordPressNoTitle" parent="WordPressHomeAsUpCustomized">
+	<style name="WordPressNoTitle" parent="WordPress">
 		<item name="android:actionBarStyle">@style/wordpress_no_title_ActionBar</item>
 		<item name="actionBarStyle">@style/wordpress_no_title_ActionBar</item>
 	</style>

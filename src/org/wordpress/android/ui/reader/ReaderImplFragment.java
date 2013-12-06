@@ -1,13 +1,13 @@
 package org.wordpress.android.ui.reader;
 
-import java.util.List;
-
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,10 +28,10 @@ import org.apache.http.protocol.HTTP;
 
 import org.wordpress.android.Constants;
 import org.wordpress.android.WordPress;
+import org.wordpress.android.WordPressDB;
 
 public class ReaderImplFragment extends ReaderBaseFragment {
     /** Called when the activity is first created. */
-    private String loginURL = "";
     public WebView wv;
     public String topicsID;
     private PostSelectedListener onPostSelectedListener;
@@ -90,7 +90,8 @@ public class ReaderImplFragment extends ReaderBaseFragment {
             @Override
             public void onReceivedError(WebView view, int errorCode,
                     String description, String failingUrl) {
-                ((ReaderActivity) getActivity()).stopAnimatingButton();
+                if (getActivity() != null && !getActivity().isFinishing())
+                    ((ReaderActivity) getActivity()).stopAnimatingButton();
                 super.onReceivedError(view, errorCode, description, failingUrl);
             }
 
@@ -180,14 +181,14 @@ public class ReaderImplFragment extends ReaderBaseFragment {
         }).start();
     }
 
-    private class loadReaderTask extends AsyncTask<String, Void, List<?>> {
+    private class loadReaderTask extends AsyncTask<Void, Void, Void> {
 
         @Override
         protected void onPreExecute() {
             ((ReaderActivity) getActivity()).startAnimatingButton();
         }
 
-        protected void onPostExecute(List<?> result) {
+        protected void onPostExecute(Void result) {
 
             if (getActivity() != null)
                 ((ReaderActivity) getActivity()).stopAnimatingButton();
@@ -218,21 +219,21 @@ public class ReaderImplFragment extends ReaderBaseFragment {
         }
 
         @Override
-        protected List<?> doInBackground(String... args) {
+        protected Void doInBackground(Void... args) {
 
-            if (WordPress.currentBlog == null) {
-                WordPress.getCurrentBlog();
+            if (getActivity() == null
+                    || !WordPress.hasValidWPComCredentials(getActivity()
+                            .getApplicationContext())) {
+                return null;
             }
 
-            loginURL = WordPress.currentBlog.getUrl().replace("xmlrpc.php",
-                    "wp-login.php");
-            if (WordPress.currentBlog.getUrl().lastIndexOf("/") != -1)
-                loginURL = WordPress.currentBlog.getUrl().substring(0,
-                        WordPress.currentBlog.getUrl().lastIndexOf("/"))
-                        + "/wp-login.php";
-            else
-                loginURL = WordPress.currentBlog.getUrl().replace("xmlrpc.php",
-                        "wp-login.php");
+            SharedPreferences settings = PreferenceManager
+                    .getDefaultSharedPreferences(getActivity()
+                            .getApplicationContext());
+            String username = settings.getString(
+                    WordPress.WPCOM_USERNAME_PREFERENCE, null);
+            String password = WordPressDB.decryptPassword(settings.getString(
+                    WordPress.WPCOM_PASSWORD_PREFERENCE, null));
 
             String readerURL = Constants.readerURL_v3;
 
@@ -254,13 +255,13 @@ public class ReaderImplFragment extends ReaderBaseFragment {
                         + "</head>"
                         + "<body onload=\"submitform()\">"
                         + "<form style=\"visibility:hidden;\" name=\"loginform\" id=\"loginform\" action=\""
-                        + loginURL
+                        + Constants.wpcomLoginURL
                         + "\" method=\"post\">"
                         + "<input type=\"text\" name=\"log\" id=\"user_login\" value=\""
-                        + WordPress.currentBlog.getUsername()
+                        + username
                         + "\"/></label>"
                         + "<input type=\"password\" name=\"pwd\" id=\"user_pass\" value=\""
-                        + WordPress.currentBlog.getPassword()
+                        + password
                         + "\" /></label>"
                         + "<input type=\"submit\" name=\"wp-submit\" id=\"wp-submit\" value=\"Log In\" />"
                         + "<input type=\"hidden\" name=\"redirect_to\" value=\""
@@ -277,9 +278,7 @@ public class ReaderImplFragment extends ReaderBaseFragment {
                 ex.printStackTrace();
             }
             return null;
-
         }
-
     }
 
     public interface ChangePageListener {

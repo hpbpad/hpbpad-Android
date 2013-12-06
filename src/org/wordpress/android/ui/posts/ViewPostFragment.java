@@ -20,16 +20,15 @@ import org.wordpress.android.WordPress;
 import org.wordpress.android.models.CustomTypePost;
 import org.wordpress.android.models.Post;
 import org.wordpress.android.models.Postable;
-import org.wordpress.android.ui.list.AbsListActivity;
-import org.wordpress.android.util.EscapeUtils;
-import org.wordpress.android.util.StringHelper;
+import org.wordpress.android.util.StringUtils;
+import org.wordpress.android.util.WPHtml;
 
-public final class ViewPostFragment extends Fragment implements
-        PostEditConstants, OnClickListener {
+public class ViewPostFragment extends Fragment implements PostEditConstants,
+        OnClickListener {
     /** Called when the activity is first created. */
 
     private OnDetailPostActionListener onDetailPostActionListener;
-    private AbsListActivity parentActivity;
+    AbsListActivity parentActivity;
 
     private ImageButton editPostButton;
     private ImageButton shareURLButton;
@@ -37,6 +36,12 @@ public final class ViewPostFragment extends Fragment implements
     private ImageButton seoButton;
     private ImageButton viewPostButton;
     private ImageButton addCommentButton;
+
+    @Override
+    public void onActivityCreated(Bundle bundle) {
+        super.onActivityCreated(bundle);
+
+    }
 
     @Override
     public void onResume() {
@@ -60,24 +65,22 @@ public final class ViewPostFragment extends Fragment implements
         this.editPostButton.setOnClickListener(this);
 
         this.shareURLButton = (ImageButton) v.findViewById(R.id.sharePostLink);
-        this.shareURLButton.setOnClickListener(this);
+        shareURLButton.setOnClickListener(this);
 
         this.deletePostButton = (ImageButton) v.findViewById(R.id.deletePost);
-        this.deletePostButton.setOnClickListener(this);
+        deletePostButton.setOnClickListener(this);
 
         this.seoButton = (ImageButton) v.findViewById(R.id.seo);
         this.seoButton.setOnClickListener(this);
-        if (!SeoResultActivity.SHOW_SEO) {
-            this.seoButton.setVisibility(View.GONE);
-        }
 
         this.viewPostButton = (ImageButton) v.findViewById(R.id.viewPost);
-        this.viewPostButton.setOnClickListener(this);
+        viewPostButton.setOnClickListener(this);
 
         this.addCommentButton = (ImageButton) v.findViewById(R.id.addComment);
-        this.addCommentButton.setOnClickListener(this);
+        addCommentButton.setOnClickListener(this);
 
         return v;
+
     }
 
     @Override
@@ -96,7 +99,7 @@ public final class ViewPostFragment extends Fragment implements
             onDetailPostActionListener.onDetailPostAction(POST_DELETE,
                     currentPost);
         } else if (v == this.seoButton) {
-            goToSeo();
+            goToSeo(currentPost);
         } else if (v == this.viewPostButton) {
             loadPostPreview();
         } else if (v == this.addCommentButton) {
@@ -133,20 +136,27 @@ public final class ViewPostFragment extends Fragment implements
         }
     }
 
-    private void loadPostPreview() {
-
-        if (WordPress.getCurrentPost() != null) {
-            if (WordPress.getCurrentPost().getLink() != null
-                    && !WordPress.getCurrentPost().getLink().equals("")) {
+    protected void loadPostPreview() {
+        Postable currentPost = WordPress.getCurrentPost();
+        if (currentPost != null) {
+            if (currentPost.getLink() != null
+                    && !currentPost.getLink().equals("")) {
                 Intent i = new Intent(getActivity(), PreviewPostActivity.class);
                 startActivity(i);
             }
         }
+
     }
 
-    private void goToSeo() {
+    private void goToSeo(Postable currentPost) {
         if (WordPress.getCurrentPost() != null) {
             Intent i = new Intent(getActivity(), SeoResultActivity.class);
+            i.putExtra("title", currentPost.getTitle());
+            i.putExtra("contents", currentPost.getContent());
+            String excerpt = currentPost.getExcerpt();
+            if (excerpt.length() > 0) {
+                i.putExtra("h1", excerpt);
+            }
             startActivity(i);
         }
     }
@@ -166,15 +176,14 @@ public final class ViewPostFragment extends Fragment implements
     public void loadPost(Postable postable) {
 
         // Don't load if the Post object of title are null, see #395
-        if (postable == null || postable.getTitle() == null) {
+        if (postable == null || postable.getTitle() == null)
             return;
-        }
 
         TextView title = (TextView) getActivity().findViewById(R.id.postTitle);
         if (postable.getTitle().equals(""))
             title.setText("(" + getResources().getText(R.string.untitled) + ")");
         else
-            title.setText(EscapeUtils.unescapeHtml(postable.getTitle()));
+            title.setText(StringUtils.unescapeHTML(postable.getTitle()));
 
         WebView webView = (WebView) getActivity().findViewById(
                 R.id.viewPostWebView);
@@ -187,29 +196,28 @@ public final class ViewPostFragment extends Fragment implements
         ImageButton addCommentButton = (ImageButton) getActivity()
                 .findViewById(R.id.addComment);
 
-        tv.setVisibility(View.GONE);
-        webView.setVisibility(View.VISIBLE);
-
-        String html;
+        String postContent;
         if (postable.getType() == Postable.TYP_PAGE
                 || postable.getType() == Postable.TYP_POST) {
             Post post = (Post) postable;
-            html = StringHelper.addPTags(postable.getContent() + "\n\n"
-                    + post.getMt_text_more());
+            postContent = postable.getContent() + "\n\n"
+                    + post.getMt_text_more();
         } else {
-            html = StringHelper.addPTags(postable.getContent());
+            postContent = postable.getContent();
         }
 
-        String htmlText = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><html><head><link rel=\"stylesheet\" type=\"text/css\" href=\"webview.css\" /></head><body><div id=\"container\">"
-                + html + "</div></body></html>";
-        webView.loadDataWithBaseURL("file:///android_asset/", htmlText,
-                "text/html", "utf-8", null);
-
         if (postable.isLocalDraft()) {
+            tv.setVisibility(View.VISIBLE);
+            webView.setVisibility(View.GONE);
             shareURLButton.setVisibility(View.GONE);
             viewPostButton.setVisibility(View.GONE);
             addCommentButton.setVisibility(View.GONE);
+
+            tv.setText(WPHtml.fromHtml(postContent.replaceAll("\uFFFC", ""),
+                    getActivity().getBaseContext(), postable));
         } else {
+            tv.setVisibility(View.GONE);
+            webView.setVisibility(View.VISIBLE);
             shareURLButton.setVisibility(View.VISIBLE);
             viewPostButton.setVisibility(View.VISIBLE);
             if (postable.allowComments()) {
@@ -217,61 +225,17 @@ public final class ViewPostFragment extends Fragment implements
             } else {
                 addCommentButton.setVisibility(View.GONE);
             }
+
+            String htmlText = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><html><head><link rel=\"stylesheet\" type=\"text/css\" href=\"webview.css\" /></head><body><div id=\"container\">"
+                    + StringUtils.addPTags(postContent)
+                    + "</div></body></html>";
+            webView.loadDataWithBaseURL("file:///android_asset/", htmlText,
+                    "text/html", "utf-8", null);
         }
 
     }
 
-    public void loadPost(CustomTypePost post) {
-
-        // Don't load if the Post object of title are null, see #395
-        if (post == null || post.getTitle() == null)
-            return;
-
-        TextView title = (TextView) getActivity().findViewById(R.id.postTitle);
-        if (post.getTitle().equals(""))
-            title.setText("(" + getResources().getText(R.string.untitled) + ")");
-        else
-            title.setText(EscapeUtils.unescapeHtml(post.getTitle()));
-
-        WebView webView = (WebView) getActivity().findViewById(
-                R.id.viewPostWebView);
-        TextView tv = (TextView) getActivity().findViewById(
-                R.id.viewPostTextView);
-        ImageButton shareURLButton = (ImageButton) getActivity().findViewById(
-                R.id.sharePostLink);
-        ImageButton viewPostButton = (ImageButton) getActivity().findViewById(
-                R.id.viewPost);
-        ImageButton addCommentButton = (ImageButton) getActivity()
-                .findViewById(R.id.addComment);
-
-        tv.setVisibility(View.GONE);
-        webView.setVisibility(View.VISIBLE);
-        // String html = StringHelper
-        // .addPTags(post.getPost_content() + "\n\n" + post.getMt_text_more());
-        String html = StringHelper.addPTags(post.getContent());
-
-        String htmlText = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><html><head><link rel=\"stylesheet\" type=\"text/css\" href=\"webview.css\" /></head><body><div id=\"container\">"
-                + html + "</div></body></html>";
-        webView.loadDataWithBaseURL("file:///android_asset/", htmlText,
-                "text/html", "utf-8", null);
-
-        if (post.isLocalDraft()) {
-            shareURLButton.setVisibility(View.GONE);
-            viewPostButton.setVisibility(View.GONE);
-            addCommentButton.setVisibility(View.GONE);
-        } else {
-            shareURLButton.setVisibility(View.VISIBLE);
-            viewPostButton.setVisibility(View.VISIBLE);
-            if ("open".equals(post.getComment_status())) {
-                addCommentButton.setVisibility(View.VISIBLE);
-            } else {
-                addCommentButton.setVisibility(View.GONE);
-            }
-        }
-
-    }
-
-    public static interface OnDetailPostActionListener {
+    public interface OnDetailPostActionListener {
         public void onDetailPostAction(int action, Postable post);
     }
 

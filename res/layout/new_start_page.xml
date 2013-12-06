@@ -12,8 +12,7 @@
 	<com.justsystems.hpb.pad.SlidingView
 		android:id="@+id/slidingDrawer1" android:layout_width="wrap_content"
 		android:layout_height="wrap_content" android:orientation="vertical"
-		android:background="#CC4B4848" android:padding="@dimen/startpage_slidingview_padding"
-		android:visibility="invisible">
+		android:background="#CC4B4848" android:padding="@dimen/startpage_slidingview_padding">
 
 		<RelativeLayout android:layout_width="match_parent"
 			android:layout_height="0dp" android:layout_weight="1">

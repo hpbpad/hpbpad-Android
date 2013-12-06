@@ -12,7 +12,7 @@ import org.xmlrpc.android.XMLRPCException;
 
 import org.wordpress.android.WordPress;
 import org.wordpress.android.models.Postable;
-import org.wordpress.android.ui.list.AbsListActivity;
+import org.wordpress.android.ui.posts.AbsListActivity;
 
 public abstract class AbsDeleteTask extends
         MultiAsyncTask<Postable, Void, Boolean> {

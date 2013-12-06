@@ -11,7 +11,7 @@
 			android:layout_height="wrap_content" android:orientation="vertical"
 			android:padding="8dp">
 
-			<LinearLayout android:id="@+id/section1"
+			<LinearLayout android:id="@+id/sectionContent"
 				android:layout_width="fill_parent" android:layout_height="wrap_content"
 				android:layout_marginBottom="10dp" android:orientation="vertical">
 
@@ -26,42 +26,36 @@
 					android:inputType="textMultiLine|textCapSentences|textAutoCorrect"
 					android:minLines="@integer/content_editor_min_lines"
 					android:textColorLink="#21759b" />
+
+				<EditText android:id="@+id/postExcerpt"
+					android:layout_width="fill_parent" android:layout_height="wrap_content"
+					android:gravity="top" android:hint="@string/post_excerpt"
+					android:inputType="textMultiLine|textCapSentences|textAutoCorrect"
+					android:minLines="1" />
+
 			</LinearLayout>
 
-			<LinearLayout android:id="@+id/section2"
+			<LinearLayout android:id="@+id/sectionTags"
 				android:layout_width="fill_parent" android:layout_height="wrap_content"
-				android:layout_marginBottom="10dp" android:orientation="vertical">
+				android:layout_marginBottom="8dp" android:orientation="vertical">
 
 				<EditText android:id="@+id/tags" android:layout_width="fill_parent"
 					android:layout_height="wrap_content" android:layout_marginTop="4dp"
 					android:hint="@string/tags_separate_with_commas" android:inputType="textAutoCorrect"
 					android:visibility="gone" />
 
-				<RelativeLayout android:layout_width="fill_parent"
-					android:layout_height="wrap_content">
-
-					<TextView android:id="@+id/selectCategoriesLabel" style="@style/WordPressSubHeader"
-						android:layout_width="wrap_content" android:layout_height="wrap_content"
-						android:text="カテゴリー" />
-
-					<Button android:id="@+id/selectCategories"
-						android:layout_width="wrap_content" android:layout_height="wrap_content"
-						android:layout_alignParentRight="true" android:layout_below="@id/selectCategoriesLabel"
-						android:paddingLeft="20dp" android:paddingRight="20dp"
-						android:text="+" />
-
-					<TextView android:id="@+id/selectedCategories"
-						android:layout_width="wrap_content" android:layout_height="wrap_content"
-						android:layout_alignParentLeft="true" android:layout_below="@id/selectCategoriesLabel"
-						android:layout_toLeftOf="@id/selectCategories"
-						android:layout_margin="4dp" android:paddingLeft="8dp"
-						android:paddingTop="8dp" android:text="@string/none" />
-
-				</RelativeLayout>
+				<TextView android:id="@+id/categoryLabel" style="@style/WordPressSubHeader"
+					android:layout_width="wrap_content" android:layout_height="wrap_content"
+					android:text="@string/categories" />
 
 			</LinearLayout>
 
-			<RelativeLayout android:id="@+id/section3"
+			<org.wordpress.android.util.FlowLayout
+				android:layout_width="fill_parent" android:layout_height="wrap_content"
+				android:id="@+id/sectionCategories" android:paddingLeft="8dp">
+			</org.wordpress.android.util.FlowLayout>
+
+			<RelativeLayout android:id="@+id/sectionLocation"
 				android:layout_width="fill_parent" android:layout_height="fill_parent"
 				android:layout_marginBottom="10dp" android:orientation="vertical"
 				android:visibility="gone">
@@ -76,6 +70,7 @@
 					android:layout_height="wrap_content" android:layout_below="@id/locationText"
 					android:text="@string/view_map" android:lines="1" android:maxWidth="110dp"
 					android:ellipsize="end" />
+
 				<Button android:id="@+id/updateLocation"
 					android:layout_width="wrap_content" android:layout_height="wrap_content"
 					android:layout_alignTop="@id/viewMap" android:layout_toRightOf="@id/viewMap"
@@ -89,7 +84,7 @@
 					android:lines="1" android:maxWidth="110dp" android:ellipsize="end" />
 			</RelativeLayout>
 
-			<LinearLayout android:id="@+id/section4"
+			<LinearLayout android:id="@+id/sectionSettings"
 				android:layout_width="fill_parent" android:layout_height="wrap_content"
 				android:layout_marginBottom="10dp" android:orientation="vertical">
 

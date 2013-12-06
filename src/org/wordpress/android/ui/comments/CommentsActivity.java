@@ -8,7 +8,6 @@ import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Looper;
 import android.support.v4.app.FragmentManager;
@@ -73,6 +72,7 @@ public class CommentsActivity extends WPActionBarActivity implements
         }
 
         FragmentManager fm = getSupportFragmentManager();
+        fm.addOnBackStackChangedListener(mOnBackStackChangedListener);
         commentList = (CommentsListFragment) fm
                 .findFragmentById(R.id.commentList);
 
@@ -82,6 +82,8 @@ public class CommentsActivity extends WPActionBarActivity implements
         if (fromNotification)
             commentList.refreshComments(false, false, false);
 
+        if (savedInstanceState != null)
+            popCommentDetail();
     }
 
     @Override
@@ -94,7 +96,7 @@ public class CommentsActivity extends WPActionBarActivity implements
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
         MenuInflater inflater = getSupportMenuInflater();
-        inflater.inflate(R.menu.refresh_only, menu);
+        inflater.inflate(R.menu.basic_menu, menu);
         refreshMenuItem = menu.findItem(R.id.menu_refresh);
         if (shouldAnimateRefreshButton) {
             shouldAnimateRefreshButton = false;
@@ -122,6 +124,13 @@ public class CommentsActivity extends WPActionBarActivity implements
         return super.onOptionsItemSelected(item);
     }
 
+    private FragmentManager.OnBackStackChangedListener mOnBackStackChangedListener = new FragmentManager.OnBackStackChangedListener() {
+        public void onBackStackChanged() {
+            if (getSupportFragmentManager().getBackStackEntryCount() == 0)
+                mMenuDrawer.setDrawerIndicatorEnabled(true);
+        }
+    };
+
     protected void popCommentDetail() {
         FragmentManager fm = getSupportFragmentManager();
         CommentFragment f = (CommentFragment) fm
@@ -139,12 +148,6 @@ public class CommentsActivity extends WPActionBarActivity implements
             if (!commentsLoaded)
                 commentList.refreshComments(false, false, false);
         }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-
     }
 
     @Override
@@ -193,7 +196,8 @@ public class CommentsActivity extends WPActionBarActivity implements
                 ft.add(R.id.commentDetailFragmentContainer, f);
                 ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
                 ft.addToBackStack(null);
-                ft.commit();
+                ft.commitAllowingStateLoss();
+                mMenuDrawer.setDrawerIndicatorEnabled(false);
             } else {
                 f.loadComment(comment);
             }
@@ -217,19 +221,49 @@ public class CommentsActivity extends WPActionBarActivity implements
                     }
                 }.start();
             } else if (status.equals("delete")) {
-                showDialog(ID_DIALOG_DELETING);
-                // pop out of the detail view if on a smaller screen
-                FragmentManager fm = getSupportFragmentManager();
-                CommentFragment f = (CommentFragment) fm
-                        .findFragmentById(R.id.commentDetail);
-                if (f == null) {
-                    fm.popBackStack();
-                }
-                new Thread() {
+                Thread action3 = new Thread() {
                     public void run() {
-                        deleteComment(commentID);
+                        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(
+                                CommentsActivity.this);
+                        dialogBuilder.setTitle(getResources().getText(
+                                R.string.confirm_delete));
+                        dialogBuilder.setMessage(getResources().getText(
+                                R.string.confirm_delete_data));
+                        dialogBuilder.setPositiveButton(
+                                getString(R.string.yes),
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog,
+                                            int whichButton) {
+                                        showDialog(ID_DIALOG_DELETING);
+                                        // pop out of the detail view if on a smaller screen
+                                        FragmentManager fm = getSupportFragmentManager();
+                                        CommentFragment f = (CommentFragment) fm
+                                                .findFragmentById(R.id.commentDetail);
+                                        if (f == null) {
+                                            fm.popBackStack();
+                                        }
+                                        new Thread() {
+                                            public void run() {
+                                                deleteComment(commentID);
+                                            }
+                                        }.start();
+
+                                    }
+                                });
+                        dialogBuilder.setNegativeButton(getString(R.string.no),
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog,
+                                            int whichButton) {
+                                        //Don't delete Comment
+                                    }
+                                });
+                        dialogBuilder.setCancelable(true);
+                        if (!isFinishing()) {
+                            dialogBuilder.create().show();
+                        }
                     }
-                }.start();
+                };
+                runOnUiThread(action3);
             } else if (status.equals("reply")) {
 
                 Intent i = new Intent(CommentsActivity.this,
@@ -280,6 +314,7 @@ public class CommentsActivity extends WPActionBarActivity implements
                         WordPress.currentComment);
                 WordPress.wpDB.updateCommentStatus(id,
                         WordPress.currentComment.commentID, newStatus);
+                contentHash.put("status", newStatus);
             }
             dismissDialog(ID_DIALOG_MODERATING);
             Thread action = new Thread() {
@@ -287,12 +322,27 @@ public class CommentsActivity extends WPActionBarActivity implements
                     Toast.makeText(CommentsActivity.this,
                             getResources().getText(R.string.comment_moderated),
                             Toast.LENGTH_SHORT).show();
+
+                    //Update the UI of the details view
+                    FragmentManager fm = getSupportFragmentManager();
+                    CommentFragment f = (CommentFragment) fm
+                            .findFragmentById(R.id.commentDetail);
+
+                    if (f != null) { //tablets
+                        if (f.isInLayout())
+                            f.processCommentStatus();
+                    } else {//phone
+                        f = (CommentFragment) fm
+                                .findFragmentById(R.id.commentDetailFragmentContainer);
+                        if (f != null)
+                            f.processCommentStatus();
+                    }
                 }
             };
             runOnUiThread(action);
             Thread action2 = new Thread() {
                 public void run() {
-                    commentList.thumbs.notifyDataSetChanged();
+                    commentList.getListView().invalidateViews();
                 }
             };
             runOnUiThread(action2);
@@ -556,10 +606,10 @@ public class CommentsActivity extends WPActionBarActivity implements
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-
-        //titleBar.switchDashboardLayout(newConfig.orientation);
-
+    public void onSaveInstanceState(Bundle outState) {
+        if (outState.isEmpty()) {
+            outState.putBoolean("bug_19917_fix", true);
+        }
+        super.onSaveInstanceState(outState);
     }
 }

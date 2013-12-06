@@ -18,8 +18,11 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
+import android.view.ViewGroup.MarginLayoutParams;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.justsystems.hpb.pad.util.Debug;
@@ -101,6 +104,7 @@ public class SiteThumbnailFragment extends Fragment {
                 switch (i) {
                 case 0:
                     options = new Options();
+                    options.inPreferredConfig = Config.RGB_565;
                     bmp = BitmapFactory.decodeFile(fileName, options);
                     break;
                 default:
@@ -162,11 +166,31 @@ public class SiteThumbnailFragment extends Fragment {
             this.image.setImageMatrix(matrix);
         }
 
-        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        if (false && getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
             int dx = (viewWidth - d.getIntrinsicWidth()) / 2;
             matrix.setScale(1.0f, 1.0f);
-            matrix.setTranslate(dx, 0);
+            LayoutParams params = this.image.getLayoutParams();
+
+            MarginLayoutParams marginParams;
+            if (params == null) {
+                marginParams = new RelativeLayout.LayoutParams(
+                        MarginLayoutParams.MATCH_PARENT,
+                        MarginLayoutParams.MATCH_PARENT);
+                this.image.setLayoutParams(marginParams);
+            } else {
+                assert params instanceof MarginLayoutParams;
+                marginParams = (MarginLayoutParams) params;
+            }
+            marginParams.rightMargin = dx;
+            marginParams.leftMargin = dx;
         } else {
+            LayoutParams params = this.image.getLayoutParams();
+            if (params != null) {
+                assert params instanceof MarginLayoutParams;
+                MarginLayoutParams marginParams = (MarginLayoutParams) params;
+                marginParams.rightMargin = 0;
+                marginParams.leftMargin = 0;
+            }
             final float rate = viewWidth / (float) d.getIntrinsicWidth();
             matrix.setScale(rate, rate);
         }

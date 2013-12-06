@@ -20,22 +20,22 @@ import org.wordpress.android.models.Blog;
 import org.wordpress.android.models.CustomTypePost;
 import org.wordpress.android.models.Post;
 import org.wordpress.android.models.Postable;
-import org.wordpress.android.ui.list.PostListAdapter;
-import org.wordpress.android.ui.list.ViewPostsFragment;
-import org.wordpress.android.ui.list.ViewPostsFragment.OnRefreshListener;
+import org.wordpress.android.ui.posts.PostListAdapter;
+import org.wordpress.android.ui.posts.PostsListFragment;
+import org.wordpress.android.ui.posts.PostsListFragment.OnRefreshListener;
 import org.wordpress.android.util.WPAlertDialogFragment;
 
 abstract class AbsLoadPostsTask extends MultiAsyncTask<List<?>, Void, Boolean> {
 
     private Context context;
-    private ViewPostsFragment fragment;
+    private PostsListFragment fragment;
 
     private OnRefreshListener mOnRefreshListener;
 
     private boolean loadMore;
     private String errorMsg = "";
 
-    AbsLoadPostsTask(ViewPostsFragment fragment,
+    AbsLoadPostsTask(PostsListFragment fragment,
             OnRefreshListener mOnRefreshListener, boolean loadMore) {
         this.context = fragment.getActivity().getApplicationContext();
         this.fragment = fragment;

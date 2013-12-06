@@ -7,12 +7,14 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Canvas;
 import android.graphics.Picture;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -26,15 +28,22 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
+import android.view.ViewGroup.MarginLayoutParams;
 import android.view.animation.TranslateAnimation;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 
 import com.actionbarsherlock.app.ActionBar;
-import com.justsystems.hpb.pad.SlidingView.OnStateChengeListener;
+import com.justsystems.hpb.pad.AbsSlidingView.OnStateChengeListener;
+import com.justsystems.hpb.pad.marketplace.MarketPlaceAdapter;
+import com.justsystems.hpb.pad.marketplace.Template;
+import com.justsystems.hpb.pad.marketplace.TempleteGetTask;
 import com.justsystems.hpb.pad.util.Debug;
 
 import org.wordpress.android.Constants;
@@ -44,11 +53,11 @@ import org.wordpress.android.task.MultiAsyncTask;
 import org.wordpress.android.task.RefreshMenuTask;
 import org.wordpress.android.ui.ViewSiteActivity;
 import org.wordpress.android.ui.WPActionBarActivity;
-import org.wordpress.android.ui.list.CustomPostTypePostsActivity;
-import org.wordpress.android.ui.list.PagesActivity;
-import org.wordpress.android.ui.list.PostsActivity;
+import org.wordpress.android.ui.posts.CustomPostTypePostsActivity;
 import org.wordpress.android.ui.posts.EditCustomTypePostActivity;
 import org.wordpress.android.ui.posts.EditPostActivity;
+import org.wordpress.android.ui.posts.PagesActivity;
+import org.wordpress.android.ui.posts.PostsActivity;
 import org.wordpress.android.util.DeviceUtils;
 
 public class AbsStartPageActivity extends WPActionBarActivity implements
@@ -63,16 +72,21 @@ public class AbsStartPageActivity extends WPActionBarActivity implements
     /** 読み込みの遅延時間（短） */
     private static final int DELAY_LOADING_LONG = 3000;
 
+    private static final int TEMPLETE_COUNT = 5;
+
     /** キャプチャの読み込み時に投稿タイプも読み込むか */
     private static final boolean LOAD_TYPE_WITH_CAPTURE = true;
     /** ドロワーを下ろすかのフラグ。起動時にドロワーが上から降りてくる際に利用する。 */
     private boolean shouldOpenDrawer = true;
 
-    private SlidingView drawer;
+    private AbsSlidingView drawer;
     private WebView webView;
     private MyWebviewClient client;
+    private LinearLayout mpParent;
 
     private ActionBarView barView;
+
+    private MarketPlaceAdapter mpAdapter;
 
     private ViewPager preview;
     private CustomFragmentStatePagerAdapter siteAdapter;
@@ -101,17 +115,46 @@ public class AbsStartPageActivity extends WPActionBarActivity implements
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        WPActionBarActivity.selectedPosition = -1;
-
         createMenuDrawer(R.layout.new_start_page);
+
+        final String prefName = getString(R.string.mp_pref_name);
+        SharedPreferences pref = getSharedPreferences(prefName, MODE_PRIVATE);
 
         ListView listView = (ListView) findViewById(R.id.template);
         LayoutInflater inflater = getLayoutInflater();
-        ImageView logo = (ImageView) inflater.inflate(R.layout.mp_logo, null);
-        listView.addHeaderView(logo);
-        listView.setAdapter(new MarketPlaceAdapter(this));
+        this.mpParent = (LinearLayout) inflater.inflate(R.layout.mp_logo, null);
+        final String promoKey = getString(R.string.pref_promotion);
+        final String promotion = pref.getString(promoKey, "");
+        WebView mpPromo = (WebView) mpParent.findViewById(R.id.mp_promo);
+        mpPromo.setOnTouchListener(new OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                return true;
+            }
+        });
+        mpPromo.setBackgroundColor(0x00000000);
+        if (!"".equals(promotion)) {
+            setPromotionText(promotion);
+        }
 
-        this.drawer = (SlidingView) findViewById(R.id.slidingDrawer1);
+        listView.addHeaderView(mpParent);
+        this.mpAdapter = new MarketPlaceAdapter(this);
+        listView.setAdapter(this.mpAdapter);
+        listView.setOnItemClickListener(new OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view,
+                    int position, long id) {
+                Template template = mpAdapter.getItem(position - 1);
+                if (template == null) {
+                    return;
+                }
+                final String url = template.getLink();
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                startActivity(intent);
+            }
+        });
+
+        this.drawer = (AbsSlidingView) findViewById(R.id.slidingDrawer1);
         this.drawer.setOnStateChangeListener(this);
 
         this.preview = (ViewPager) findViewById(R.id.preview);
@@ -171,12 +214,23 @@ public class AbsStartPageActivity extends WPActionBarActivity implements
         ActionBar.LayoutParams params = new ActionBar.LayoutParams(
                 ActionBar.LayoutParams.MATCH_PARENT,
                 ActionBar.LayoutParams.MATCH_PARENT);
-        final int margin = getResources().getDimensionPixelSize(
-                R.dimen.startpage_actionbar_margin);
-        params.rightMargin = margin;
+        //アイコンを中心に表示させる
+        final int marginLeft = getResources().getDimensionPixelSize(
+                R.dimen.startpage_actionbar_left_margin);
+        final int marginRight = getResources().getDimensionPixelSize(
+                R.dimen.startpage_actionbar_right_margin);
+        params.leftMargin = marginLeft;
+        params.rightMargin = marginRight;
         bar.setCustomView(this.barView, params);
 
         this.detector = new GestureDetector(this, this);
+
+        final String timeKey = getString(R.string.pref_last_get_time);
+        long lastTime = pref.getLong(timeKey, 0);
+        if (System.currentTimeMillis() - lastTime > 7 * 24 * 60 * 60 * 1000) {
+            TempleteGetTask task = new TempleteGetTask(this);
+            task.executeOnMultiThread(TEMPLETE_COUNT);
+        }
     }
 
     private void updateUI() {
@@ -266,18 +320,18 @@ public class AbsStartPageActivity extends WPActionBarActivity implements
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus && this.shouldOpenDrawer) {
-            this.drawer.closeWitoutAnimation();
+            this.drawer.close();
             this.drawer.setVisibility(View.VISIBLE);
-            this.drawer.open();
+            this.drawer.animateOpen();
             this.shouldOpenDrawer = false;
         }
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
-        if (!this.drawer.isOpen()) {
+        if (!this.drawer.isOpened()) {
             // viewに設定したoffsetがviewPagerの更新によってリセットされる問題があるため回避
-            this.drawer.openWitoutAnimation();
+            this.drawer.open();
             onOpen();
         }
         super.onConfigurationChanged(newConfig);
@@ -313,9 +367,9 @@ public class AbsStartPageActivity extends WPActionBarActivity implements
 
     @Override
     public void onBlogChanged() {
-        if (!this.drawer.isOpen()) {
+        if (!this.drawer.isOpened()) {
             // viewに設定したoffsetがviewPagerの更新によってリセットされる問題があるため回避
-            this.drawer.openWitoutAnimation();
+            this.drawer.open();
             onOpen();
         }
         super.onBlogChanged();
@@ -382,8 +436,8 @@ public class AbsStartPageActivity extends WPActionBarActivity implements
     @Override
     public boolean onSingleTapUp(MotionEvent e) {
         Debug.logd("onSingleTapUp");
-        if (!this.drawer.isOpen()) {
-            this.drawer.open();
+        if (!this.drawer.isOpened()) {
+            this.drawer.animateOpen();
         }
         return true;
     }
@@ -411,8 +465,12 @@ public class AbsStartPageActivity extends WPActionBarActivity implements
             final int animationDuration = (int) (time * restY / distY);
             Debug.logd("animationDuration" + animationDuration);
 
-            if (!this.drawer.isOpen()) {
-                this.drawer.open(animationDuration);
+            if (!this.drawer.isOpened()) {
+                if (DeviceUtils.isOverEqualThanHoneycomb()) {
+                    this.drawer.open();
+                } else {
+                    ((SlidingView) this.drawer).animateOpen(animationDuration);
+                }
             }
             return true;
         }
@@ -424,11 +482,18 @@ public class AbsStartPageActivity extends WPActionBarActivity implements
 
         @Override
         public boolean onTouch(View v, MotionEvent event) {
+            //homeAsUpと被っているところはタッチイベントをスルーする
+            if (event.getAction() == MotionEvent.ACTION_DOWN
+                    && event.getX() < -((MarginLayoutParams) barView
+                            .getLayoutParams()).leftMargin) {
+                return false;
+            }
+
             if (detector.onTouchEvent(event)) {
                 return true;
             }
 
-            if (drawer.isOpen()) {
+            if (drawer.isOpened()) {
                 return true;
             }
 
@@ -443,25 +508,29 @@ public class AbsStartPageActivity extends WPActionBarActivity implements
             case MotionEvent.ACTION_DOWN:
                 break;
             case MotionEvent.ACTION_MOVE:
+                if (drawer instanceof SlidingDrawerView) {
+                    break;
+                }
+                SlidingView view = (SlidingView) drawer;
                 if (y > barView.getBottom()) {
                     if (top + offset < 0) {
-                        drawer.offsetTopAndBottom(offset);
+                        view.offsetTopAndBottom(offset);
                     } else {
-                        drawer.offsetTopAndBottom(-top);
+                        view.offsetTopAndBottom(-top);
                     }
-                    invalidateDrawer();
+                    invalidateDrawer(view);
 
                     if (prevY < barView.getBottom()
                             && !DeviceUtils.isLessThanJB()) {
                         TranslateAnimation anim = new TranslateAnimation(0, 0,
                                 0, 0);
                         anim.setDuration(10);
-                        drawer.startAnimation(anim);
+                        view.startAnimation(anim);
                     }
                 } else {
                     if (top > -height) {
-                        drawer.offsetTopAndBottom(-top - height);
-                        invalidateDrawer();
+                        view.offsetTopAndBottom(-top - height);
+                        invalidateDrawer(view);
                     }
                 }
                 break;
@@ -469,8 +538,13 @@ public class AbsStartPageActivity extends WPActionBarActivity implements
                 if (y > barView.getBottom() + height / 2) {
                     drawer.open();
                 } else {
-                    drawer.offsetTopAndBottom(-top - height);
-                    invalidateDrawer();
+                    if (drawer instanceof SlidingDrawerView) {
+                        drawer.close();
+                    } else {
+                        view = (SlidingView) drawer;
+                        view.offsetTopAndBottom(-top - height);
+                        invalidateDrawer(view);
+                    }
                 }
                 break;
             default:
@@ -480,15 +554,19 @@ public class AbsStartPageActivity extends WPActionBarActivity implements
             return true;
         }
 
-        private void invalidateDrawer() {
+        private void invalidateDrawer(SlidingView view) {
             final int top = drawer.getTop();
             final int height = drawer.getHeight();
-            drawer.invalidate(0, -top, drawer.getWidth(), height - top);
+            view.invalidate(0, -top, drawer.getWidth(), height - top);
         }
     };
 
+    public void invalidateMpItem() {
+        this.mpAdapter.setItem();
+    }
+
     public void onTypeUpdated() {
-        if (!drawer.isOpen()) {
+        if (!drawer.isOpened()) {
             // viewに設定したoffsetがviewPagerの更新によってリセットされる問題があるため回避
             this.typeUpdateFlg = true;
             return;
@@ -497,6 +575,20 @@ public class AbsStartPageActivity extends WPActionBarActivity implements
         this.typeAdapter = new PostTypePagerAdapter(this, currentBlog.getId());
         setTypeMargin();
         this.postType.setAdapter(this.typeAdapter);
+    }
+
+    public void setPromotionText(String promotion) {
+        WebView mpPromo = (WebView) mpParent.findViewById(R.id.mp_promo);
+        if (!"".equals(promotion)) {
+            mpPromo.loadDataWithBaseURL("", promotion, "text/html", "utf-8", "");
+            if (mpPromo.getVisibility() == View.GONE) {
+                mpPromo.setVisibility(View.VISIBLE);
+            }
+        } else {
+            if (mpPromo.getVisibility() == View.VISIBLE) {
+                mpPromo.setVisibility(View.GONE);
+            }
+        }
     }
 
     private void setTypeMargin() {
@@ -557,7 +649,6 @@ public class AbsStartPageActivity extends WPActionBarActivity implements
         Intent intent = new Intent(this, ViewSiteActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
         startActivity(intent);
-        finish();
     }
 
     private void startList() {
@@ -672,8 +763,7 @@ public class AbsStartPageActivity extends WPActionBarActivity implements
             Picture pic = params[0];
             Bitmap bmp = null;
             try {
-                bmp = Bitmap
-                        .createBitmap(width, width, Bitmap.Config.ARGB_8888);
+                bmp = Bitmap.createBitmap(width, width, Bitmap.Config.RGB_565);
             } catch (OutOfMemoryError e) {
                 //GCしてもう一回トライする
                 System.gc();
@@ -681,7 +771,7 @@ public class AbsStartPageActivity extends WPActionBarActivity implements
             if (bmp == null) {
                 try {
                     bmp = Bitmap.createBitmap(width, width,
-                            Bitmap.Config.ARGB_8888);
+                            Bitmap.Config.RGB_565);
                 } catch (OutOfMemoryError e) {
                     return null;
                 }
@@ -724,11 +814,14 @@ public class AbsStartPageActivity extends WPActionBarActivity implements
                 AbsStartPageActivity activity = this.activity.get();
                 // viewに設定したoffsetがviewPagerの更新によってリセットされる問題があるため回避
                 if (frag != null && activity != null
-                        && activity.drawer.isOpen()) {
+                        && activity.drawer.isOpened()) {
                     frag.refreshImage();
                 } else if (activity != null) {
                     activity.refreshImageFlg = true;
                 }
+            }
+            if (result != null) {
+                result.recycle();
             }
         }
     }

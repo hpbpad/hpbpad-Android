@@ -5,12 +5,16 @@
 	<color name="image_options_text">#FFFFFF</color>
 	<!-- <color name="pressed_wordpress">#CC2EA2CC</color> -->
 	<color name="pressed_wordpress">#EA3B91</color>
-	<color name="list_row_bg">#F7F7F7</color>
+	<color name="list_row_bg">#FFFFFF</color>
 
 	<!-- Colors for menu drawer. -->
 	<color name="md__comment_background">#EA3B91</color>
 	<color name="md__iconTintColor">#DDFFFFFF</color>
-	<color name="md__shadowColor">#44000000</color>
+	<color name="md__shadowColor">#99000000</color>
+
+	<color name="wordpress_blue">#21759B</color>
+	<color name="light_gray">#E5E5E5</color>
+	<color name="gray">#CCC</color>
 	<color name="md__shadow">#252424</color>
 
 	<color name="default_pressed">#EA3B91</color>

@@ -1,5 +1,7 @@
 package org.wordpress.android.ui.posts;
 
+import java.util.ArrayList;
+
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -19,8 +21,7 @@ import org.wordpress.android.models.CustomTypePost;
 import org.wordpress.android.models.MediaFile;
 import org.wordpress.android.models.Postable;
 import org.wordpress.android.models.Term;
-import org.wordpress.android.ui.list.CustomPostTypePostsActivity;
-import org.wordpress.android.util.EscapeUtils;
+import org.wordpress.android.util.JSONUtil;
 import org.wordpress.android.util.WPHtml;
 import org.wordpress.android.util.WPImageSpan;
 
@@ -33,27 +34,29 @@ public class EditCustomTypePostActivity extends AbsEditActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mCategories = new JSONArray();
+        mCategories = new ArrayList<String>();
         if (!mIsNew) {
             this.mPost = (CustomTypePost) super.mPostable;
             this.terms = mPost.getTerms();
             if (this.terms != null) {
                 for (int i = 0; i < this.terms.length; i++) {
-                    mCategories.put(this.terms[i].getName());
+                    mCategories.add(this.terms[i].getName());
                 }
-                mCategoriesText.setText(getCategoriesCSV(mCategories));
             }
         }
+        populateSelectedCategories();
     }
 
     @Override
-    protected boolean savePost(boolean autoSave) {
+    protected boolean savePost(boolean isAutoSave, boolean isDraftSave) {
+
         String title = mTitleEditText.getText().toString();
         String password = mPasswordEditText.getText().toString();
         String pubDate = mPubDateText.getText().toString();
+        String excerpt = mExcerptEditText.getText().toString();
         String content = "";
 
-        if (mLocalDraft || mIsNew && !autoSave) {
+        if (mLocalDraft || mIsNew && !isAutoSave) {
             Editable e = mContentEditText.getText();
             if (android.os.Build.VERSION.SDK_INT >= 14) {
                 // remove suggestion spans, they cause craziness in
@@ -66,7 +69,7 @@ public class EditCustomTypePostActivity extends AbsEditActivity {
                         e.removeSpan(style[i]);
                 }
             }
-            content = EscapeUtils.unescapeHtml(WPHtml.toHtml(e));
+            content = WPHtml.toHtml(e);
             // replace duplicate <p> tags so there's not duplicates, trac #86
             content = content.replace("<p><p>", "<p>");
             content = content.replace("</p></p>", "</p>");
@@ -99,7 +102,7 @@ public class EditCustomTypePostActivity extends AbsEditActivity {
         String images = "";
         boolean success = false;
 
-        if (content.equals("") && !autoSave) {
+        if (content.equals("") && !isAutoSave && !isDraftSave) {
             AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(
                     EditCustomTypePostActivity.this);
             dialogBuilder.setTitle(getResources()
@@ -143,14 +146,13 @@ public class EditCustomTypePostActivity extends AbsEditActivity {
                         mf.save();
 
                         int tagStart = s.getSpanStart(wpIS);
-                        if (!autoSave) {
+                        if (!isAutoSave) {
                             s.removeSpan(wpIS);
                             s.insert(tagStart, "<img android-uri=\""
                                     + wpIS.getImageSource().toString()
                                     + "\" />");
                             if (mLocalDraft)
-                                content = EscapeUtils.unescapeHtml(WPHtml
-                                        .toHtml(s));
+                                content = WPHtml.toHtml(s);
                             else
                                 content = s.toString();
                         }
@@ -180,6 +182,9 @@ public class EditCustomTypePostActivity extends AbsEditActivity {
             }
 
             if (mIsNew) {
+                JSONArray categorisList = JSONUtil
+                        .fromStringListToJSONArray(mCategories);
+
                 mPost = new CustomTypePost(mBlogID, typeName, title, content,
                         images, pubDateTimestamp, status, password, postFormat,
                         terms, true);
@@ -189,7 +194,6 @@ public class EditCustomTypePostActivity extends AbsEditActivity {
 
                 if (success) {
                     mIsNew = false;
-                    mIsNewDraft = true;
                 }
 
                 // mPost.deleteMediaFiles();
@@ -225,6 +229,7 @@ public class EditCustomTypePostActivity extends AbsEditActivity {
             } else {
 
                 mPost.setTitle(title);
+                mPost.setExcerpt(excerpt);
                 mPost.setPost_content(content);
 
                 // mPost.setMediaPaths(images);
@@ -255,20 +260,14 @@ public class EditCustomTypePostActivity extends AbsEditActivity {
             if (parcelables == null) {
                 return;
             }
-            mCategories = new JSONArray();
+            mCategories = new ArrayList<String>();
             this.terms = new Term[parcelables.length];
             for (int i = 0; i < parcelables.length; i++) {
                 Term term = (Term) parcelables[i];
-                mCategories.put(term.getName());
+                mCategories.add(term.getName());
                 terms[i] = term;
             }
-
-            final String str = getCategoriesCSV(mCategories);
-            if (str != null && str.length() > 0) {
-                mCategoriesText.setText(getCategoriesCSV(mCategories));
-            } else {
-                mCategoriesText.setText(getString(R.string.none));
-            }
+            populateSelectedCategories();
         }
     }
 

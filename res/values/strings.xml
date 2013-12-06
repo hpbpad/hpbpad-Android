@@ -25,6 +25,11 @@
 	</string>
 	<string name="sign_out_confirm">Are you sure you want to sign out?</string>
 	<string name="please_sign_in">Please sign in again.</string>
+	<string name="account_two_step_auth_enabled">This account has two step authentication enabled.
+		Please open WordPress.com in your browser, and generate an
+		application-specific passwords to use with this app.\n(Log in to
+		WordPress, and go to Settings->security).
+	</string>
 
 	<!-- form labels -->
 	<string name="select_categories">Select Categories</string>
@@ -97,8 +102,7 @@
 	<string name="immediately">Immediately</string>
 	<string name="uploading">Uploading</string>
 	<string name="uploading_media_item">Uploading media item #</string>
-	<string name="gallery_error">Sorry, the media item could not be retrieved from
-		the Gallery.
+	<string name="gallery_error">Sorry, the media item could not be retrieved.
 	</string>
 	<string name="refresh">Refresh</string>
 	<string name="home">Home</string>
@@ -112,6 +116,9 @@
 	<string name="wpcom">WordPress.com</string>
 	<string name="sign_in">Sign in</string>
 	<string name="sign_out">Sign out</string>
+	<string name="upload">Upload</string>
+	<string name="please_wait_refresh_done">Please wait, loading items.</string>
+	<string name="info">Info</string>
 
 	<!-- tab titles -->
 	<string name="tab_comments">Comments</string>
@@ -134,7 +141,6 @@
 	<!-- posts tab -->
 	<string name="untitled">Untitled</string>
 	<string name="local_draft">Local Draft</string>
-
 	<string name="local_drafts">Local Drafts</string>
 
 	<!-- post view -->
@@ -150,6 +156,8 @@
 	<string name="file_not_found">Could not find the media file for upload. Was it
 		deleted or moved?
 	</string>
+	<string name="post_excerpt">Excerpt</string>
+	<string name="download">Downloading Image</string>
 
 	<!-- page view -->
 	<string name="page_id">Page</string>
@@ -232,8 +240,8 @@
 	<string name="view_in_browser">View in Browser</string>
 	<string name="post_signature">Post signature</string>
 	<string name="add_tagline">Add a signature to new posts</string>
-	<string name="posted_from">Posted from hpb pad</string>
-	<string name="posted_from_blackberry">Posted from hpb pad</string>
+	<string name="posted_from">Posted from WordPress for Android</string>
+	<string name="posted_from_blackberry">Posted from WordPress for BlackBerry</string>
 	<string name="preview">Preview</string>
 
 	<!-- comment actions -->
@@ -267,6 +275,8 @@
 	<string name="media">Media</string>
 
 	<!-- category management -->
+	<string name="categories">Categories</string>
+	<string name="category">Category</string>
 	<string name="add_new_category">Add New Category</string>
 	<string name="category_name">Category Name</string>
 	<string name="category_slug">Category Slug (optional)</string>
@@ -388,6 +398,9 @@
 	<string name="tap_to_view">Tap to view.</string>
 	<string name="moderate_comment">Moderate comment</string>
 	<string name="tooltip_follow">Follow or unfollow this blog</string>
+	<string name="retry_reply">Reply failed. Tap to retry.</string>
+	<string name="reply_failed">Reply failed.</string>
+	<string name="tap_retry">Tap to retry.</string>
 
 	<!-- reader -->
 	<string name="reader">Reader</string>
@@ -439,9 +452,8 @@
 
 	<!-- Remote Post Changes -->
 	<string name="local_changes">Local Changes</string>
-	<string name="remote_changes">You\'ve made changes to an uploaded post that
-		haven\'t been saved yet. Proceed with the refresh and overwrite local
-		changes?
+	<string name="remote_changes">You\'ve made changes to a post that haven\'t been
+		uploaded yet. Proceed with the refresh and overwrite local changes?
 	</string>
 
 	<string name="ok">OK</string>
@@ -459,6 +471,9 @@
 		Please try again later.
 	</string>
 	<string name="error_generic">Sorry, an error occurred. Please try again later.
+	</string>
+	<string name="error_parsing_response">Sorry, an error occurred while fetching data.
+		Please try again later.
 	</string>
 	<string name="error_moderate_comment">Sorry, an error occurred while attempting to
 		moderate. Please try again later.
@@ -481,5 +496,13 @@
 
 	<!-- Image Descriptions for Accessibility -->
 	<string name="content_description_add_media">Add media</string>
+	<string name="error_load_comment">Sorry, could not load the comment. Please try
+		again.
+	</string>
+	<string name="manage">Manage</string>
+	<string name="dashboard_tip">Tap the back key to return to the app.</string>
+	<string name="discard">Discard</string>
+	<string name="prompt_save_changes">Would you like to save your changes?</string>
+	<string name="error_downloading_image">Error downloading image. Please try again.</string>
 
 </resources>

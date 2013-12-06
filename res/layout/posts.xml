@@ -6,7 +6,7 @@
 	<LinearLayout android:id="@+id/postDetailFragmentContainer"
 		android:layout_width="wrap_content" android:layout_height="wrap_content"
 		android:orientation="horizontal">
-		<fragment android:name="org.wordpress.android.ui.list.ViewPostsFragment"
+		<fragment android:name="org.wordpress.android.ui.posts.PostsListFragment"
 			android:id="@+id/postList" android:layout_weight="1"
 			android:layout_width="0dp" android:layout_height="match_parent" />
 	</LinearLayout>

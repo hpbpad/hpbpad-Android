@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.justsystems.hpb.pad.TemplateView
+<com.justsystems.hpb.pad.marketplace.TemplateView
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="fill_parent" android:layout_height="wrap_content"
 	android:background="@drawable/mp_template_bg" />

@@ -21,22 +21,19 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.commonsware.cwac.cache.SimpleWebImageCache;
-import com.commonsware.cwac.thumbnail.ThumbnailAdapter;
-import com.commonsware.cwac.thumbnail.ThumbnailBus;
-import com.commonsware.cwac.thumbnail.ThumbnailMessage;
+import com.android.volley.toolbox.NetworkImageView;
 import com.justsystems.hpb.pad.R;
 
 import org.wordpress.android.WordPress;
 import org.wordpress.android.models.Blog;
 import org.wordpress.android.ui.accounts.NewAccountActivity;
-import org.wordpress.android.ui.comments.CommentsListFragment;
 import org.wordpress.android.ui.posts.EditPostActivity;
-import org.wordpress.android.util.EscapeUtils;
+import org.wordpress.android.util.StringUtils;
 
 public class AddQuickPressShortcutActivity extends ListActivity {
     static final int ADD_ACCOUNT_REQUEST = 0;
@@ -47,8 +44,6 @@ public class AddQuickPressShortcutActivity extends ListActivity {
     public String[] accountUsers;
     public String[] blavatars;
     public List<String> accountNames = new Vector<String>();
-    protected ThumbnailAdapter thumbs = null;
-    protected static final int[] IMAGE_IDS = { R.id.blavatar };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -100,8 +95,7 @@ public class AddQuickPressShortcutActivity extends ListActivity {
                 String[] urlSplit = url.split("/");
                 url = urlSplit[0];
                 url = "http://gravatar.com/blavatar/"
-                        + CommentsListFragment.getMd5Hash(url.trim())
-                        + "?s=60&d=404";
+                        + StringUtils.getMd5Hash(url.trim()) + "?s=60&d=404";
                 blavatars[validBlogCtr] = url;
                 accountNames.add(validBlogCtr, blogNames[i]);
                 validBlogCtr++;
@@ -111,12 +105,7 @@ public class AddQuickPressShortcutActivity extends ListActivity {
                 accounts = WordPress.wpDB.getAccounts();
             }
 
-            ThumbnailBus bus = new ThumbnailBus();
-            thumbs = new ThumbnailAdapter(this, new HomeListAdapter(),
-                    new SimpleWebImageCache<ThumbnailBus, ThumbnailMessage>(
-                            null, null, 101, bus), IMAGE_IDS);
-
-            setListAdapter(thumbs);
+            setListAdapter(new HomeListAdapter());
 
             listView.setOnItemClickListener(new OnItemClickListener() {
                 public void onItemClick(AdapterView<?> arg0, View row,
@@ -147,7 +136,7 @@ public class AddQuickPressShortcutActivity extends ListActivity {
         final EditText quickPressShortcutName = new EditText(
                 AddQuickPressShortcutActivity.this);
         quickPressShortcutName.setText("QP "
-                + EscapeUtils.unescapeHtml(accountNames.get(position)));
+                + StringUtils.unescapeHTML(accountNames.get(position)));
         dialogBuilder.setView(quickPressShortcutName);
 
         dialogBuilder.setPositiveButton(R.string.add,
@@ -170,8 +159,8 @@ public class AddQuickPressShortcutActivity extends ListActivity {
                                     .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                             shortcutIntent.putExtra("id", accountIDs[position]);
                             shortcutIntent.putExtra("isQuickPress", true);
-                            shortcutIntent.putExtra("accountName", EscapeUtils
-                                    .unescapeHtml(accountNames.get(position)));
+                            shortcutIntent.putExtra("accountName", StringUtils
+                                    .unescapeHTML(accountNames.get(position)));
                             shortcutIntent.putExtra("isNew", true);
 
                             Intent addIntent = new Intent();
@@ -257,80 +246,29 @@ public class AddQuickPressShortcutActivity extends ListActivity {
         }
 
         public View getView(int position, View convertView, ViewGroup parent) {
-            View pv = convertView;
-            ViewWrapper wrapper = null;
-            if (pv == null) {
+            RelativeLayout view = (RelativeLayout) convertView;
+            if (view == null) {
                 LayoutInflater inflater = getLayoutInflater();
-                pv = inflater.inflate(R.layout.home_row, parent, false);
-                wrapper = new ViewWrapper(pv);
-                /*if (position == 0) {
-                    usenameHeight = wrapper.getBlogUsername().getHeight();
-                }*/
-                pv.setTag(wrapper);
-                wrapper = new ViewWrapper(pv);
-                pv.setTag(wrapper);
-            } else {
-                wrapper = (ViewWrapper) pv.getTag();
+                view = (RelativeLayout) inflater.inflate(R.layout.home_row,
+                        parent, false);
             }
             String username = accountUsers[position];
-            pv.setBackgroundDrawable(getResources().getDrawable(
+            view.setBackgroundDrawable(getResources().getDrawable(
                     R.drawable.list_bg_selector));
-            pv.setId(Integer.valueOf(accountIDs[position]));
-            if (wrapper.getBlogUsername().getHeight() == 0) {
-                wrapper.getBlogUsername().setHeight(
-                        (int) wrapper.getBlogName().getTextSize()
-                                + wrapper.getBlogUsername().getPaddingBottom());
-            }
+            view.setId(Integer.valueOf(accountIDs[position]));
 
-            wrapper.getBlogName().setText(
-                    EscapeUtils.unescapeHtml(blogNames[position]));
-            wrapper.getBlogUsername().setText(
-                    EscapeUtils.unescapeHtml(username));
+            TextView blogName = (TextView) view.findViewById(R.id.blogName);
+            TextView blogUsername = (TextView) view.findViewById(R.id.blogUser);
+            NetworkImageView blavatar = (NetworkImageView) view
+                    .findViewById(R.id.blavatar);
 
-            if (wrapper.getBlavatar() != null) {
-                try {
-                    wrapper.getBlavatar().setImageResource(R.drawable.ic_app);
-                    wrapper.getBlavatar().setTag(blavatars[position]);
-                } catch (Throwable t) {
-                    t.printStackTrace();
-                }
-            }
+            blogName.setText(StringUtils.unescapeHTML(blogNames[position]));
+            blogUsername.setText(StringUtils.unescapeHTML(username));
+            blavatar.setImageUrl(blavatars[position], WordPress.imageLoader);
 
-            return pv;
+            return view;
 
         }
 
-    }
-
-    class ViewWrapper {
-        View base;
-        TextView blogName = null;
-        TextView blogUsername = null;
-        ImageView blavatar = null;
-
-        ViewWrapper(View base) {
-            this.base = base;
-        }
-
-        TextView getBlogName() {
-            if (blogName == null) {
-                blogName = (TextView) base.findViewById(R.id.blogName);
-            }
-            return (blogName);
-        }
-
-        TextView getBlogUsername() {
-            if (blogUsername == null) {
-                blogUsername = (TextView) base.findViewById(R.id.blogUser);
-            }
-            return (blogUsername);
-        }
-
-        ImageView getBlavatar() {
-            if (blavatar == null) {
-                blavatar = (ImageView) base.findViewById(R.id.blavatar);
-            }
-            return (blavatar);
-        }
     }
 }

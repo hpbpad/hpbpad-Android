@@ -183,6 +183,9 @@ public class ApiHelper {
                 hPost.put("jetpack_client_id", "jetpack_client_id");
                 hPost.put("blog_public", "blog_public");
                 hPost.put("home_url", "home_url");
+                hPost.put("admin_url", "admin_url");
+                hPost.put("login_url", "login_url");
+
                 Object[] vParams = { blog.getBlogId(), blog.getUsername(),
                         blog.getPassword(), hPost };
                 Object versionResult = new Object();
@@ -221,7 +224,9 @@ public class ApiHelper {
                         } else {
                             blog.setFeaturedImageCapable(false);
                         }
-                        blog.save("");
+                        if (WordPress.getCurrentBlog() != null
+                                && WordPress.getCurrentBlog().isActive())
+                            blog.save("");
                     } catch (Exception e) {
                     }
                 }
@@ -251,7 +256,9 @@ public class ApiHelper {
 
     public static Map<Integer, Map<?, ?>> refreshComments(Context ctx,
             Object[] commentParams) throws XMLRPCException {
-        Blog blog = WordPress.currentBlog;
+        Blog blog = WordPress.getCurrentBlog();
+        if (blog == null)
+            return null;
         client = new XMLRPCClient(blog.getUrl(), blog.getHttpuser(),
                 blog.getHttppassword());
         String author, postID, comment, status, authorEmail, authorURL, postTitle;
@@ -438,7 +445,6 @@ public class ApiHelper {
 
             return request;
         } catch (HttpRequestException e) {
-            e.printStackTrace();
             return null;
         }
     }

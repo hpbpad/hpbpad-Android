@@ -12,6 +12,7 @@ import android.widget.TextView;
 import com.justsystems.hpb.pad.R;
 
 import org.wordpress.android.WordPress;
+import org.wordpress.android.lockmanager.AppLockManager;
 import org.wordpress.android.util.DeviceUtils;
 
 public class AboutActivity extends Activity implements OnClickListener {
@@ -54,6 +55,7 @@ public class AboutActivity extends Activity implements OnClickListener {
         } else {
             return;
         }
+        AppLockManager.getInstance().setExtendedTimeout();
         startActivity(new Intent(Intent.ACTION_VIEW, uri));
     }
 }

@@ -20,7 +20,7 @@ hpbpadではversion4.2.0を利用しています。
 <https://github.com/SimonVT/android-menudrawer/tree/master/menudrawer>  
 hpbpadではversion2.0.3を利用しています。
 
-各バージョン情報はhpbpad1.0.0現在になります。
+各バージョン情報はhpbpad1.1.0現在になります。
 
 ビルド方法の詳細は以下のページをご覧ください。
 <http://make.wordpress.org/mobile/handbook/pathways/android/tutorials-guides/>

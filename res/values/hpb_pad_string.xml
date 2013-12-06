@@ -1,16 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-	<string name="kwd_constitution">キーワード構成</string>
-	<string name="page_text_count">ページの文字数: %1$d文字</string>
-	<string name="title_text_count">見出し: %1$d文字</string>
-	<string name="meta_desc_text_count">メタディスクリプション: %1$d文字</string>
-	<string name="meta_kwd_text_count">メタキーワード: %1$d文字</string>
+	<string name="kwd_constitution">ページの構成ワード</string>
+	<string name="title_text_count">タイトル</string>
+	<string name="contents_text_count">本文</string>
+	<string name="h1_text_count">見出し</string>
+	<string name="meta_desc_text_count">メタディスクリプション</string>
+	<string name="meta_kwd_text_count">メタキーワード</string>
 	<string name="seo_check">SEOチェック</string>
 	<string name="post_seo">投稿SEO</string>
 	<string name="seo_disc">投稿のSEOチェック</string>
 
+	<string name="kwd_desc">ユーザーが検索に使用すると思われるキーワードを効果的に織り交ぜてください。</string>
+
+	<string name="seo_error_message_input_empty">タイトルとコンテンツを入力してください</string>
+	<string name="error_connection">通信エラー</string>
+	<string name="seo_error_message_400">アプリとサーバーの処理に問題が発生しました。</string>
+	<string name="seo_error_message_403">利用上限を超えています。時間を置いてから再度お試しください。</string>
+	<string name="seo_error_message_404">データが見つかりませんでした。</string>
+	<string name="seo_error_message_500">サーバーに問題が発生しています。時間を置いてから再度お試しください。</string>
+
 	<string name="market_place">マーケットプレイス</string>
 
-	<string name="login_myblog">自分で開設した WordPress ブログにログイン</string>
-	<string name="login_wpdotcom">WordPress.com で開設したブログにログイン</string>
+	<string name="login_myblog">自分で開設したブログを追加</string>
+	<string name="login_wpdotcom">WordPress.com で開設したブログを追加</string>
+
+	<string name="mp_pref_name">mp_pref</string>
+	<string name="pref_promotion">promotion</string>
+	<string name="pref_last_get_time">last_get_time</string>
 </resources>

@@ -1,14 +1,19 @@
 package org.wordpress.android.ui.posts;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Type;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Vector;
 
 import android.app.Activity;
@@ -28,6 +33,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.text.Editable;
+import android.text.Html;
 import android.text.Layout;
 import android.text.Selection;
 import android.text.Spannable;
@@ -49,6 +55,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnFocusChangeListener;
 import android.view.View.OnTouchListener;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.AlphaAnimation;
 import android.widget.ArrayAdapter;
@@ -59,7 +66,6 @@ import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
@@ -77,22 +83,19 @@ import com.google.gson.reflect.TypeToken;
 import com.justsystems.hpb.pad.R;
 import com.justsystems.hpb.pad.seo.SeoResultActivity;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.xmlrpc.android.ApiHelper;
 
 import org.wordpress.android.Constants;
 import org.wordpress.android.WordPress;
+import org.wordpress.android.lockmanager.AppLockManager;
 import org.wordpress.android.models.Blog;
+import org.wordpress.android.models.Post;
 import org.wordpress.android.models.Postable;
 import org.wordpress.android.ui.accounts.NewAccountActivity;
-import org.wordpress.android.ui.list.AbsListActivity;
-import org.wordpress.android.ui.list.PagesActivity;
 import org.wordpress.android.util.DeviceUtils;
-import org.wordpress.android.util.EscapeUtils;
 import org.wordpress.android.util.ImageHelper;
 import org.wordpress.android.util.PostUploadService;
-import org.wordpress.android.util.StringHelper;
+import org.wordpress.android.util.StringUtils;
 import org.wordpress.android.util.WPEditText;
 import org.wordpress.android.util.WPHtml;
 import org.wordpress.android.util.WPImageSpan;
@@ -115,17 +118,24 @@ public abstract class AbsEditActivity extends SherlockActivity implements
     private static final int ID_DIALOG_DATE = 0;
     private static final int ID_DIALOG_TIME = 1;
     private static final int ID_DIALOG_LOADING = 2;
+    private static final int ID_DIALOG_DOWNLOAD = 3;
+    private static final int ID_DIALOG_SEO_ALERT = 4;
+
+    private static final String CATEGORY_PREFIX_TAG = "category-";
 
     protected Blog mBlog;
     protected Postable mPostable;
+    // Used to restore post content if 'Discard' is chosen when leaving the editor.
+    private Post mOriginalPost;
 
-    protected JSONArray mCategories;
+    protected ArrayList<String> mCategories;
 
     protected WPEditText mContentEditText;
     protected ImageButton mAddPictureButton;
     protected Spinner mStatusSpinner;
-    protected EditText mTitleEditText, mPasswordEditText;
-    protected TextView mLocationText, mCategoriesText, mPubDateText;
+    protected EditText mTitleEditText, mPasswordEditText, mTagsEditText,
+            mExcerptEditText;
+    protected TextView mLocationText, mPubDateText;
     private ToggleButton mBoldToggleButton, mEmToggleButton,
             mBquoteToggleButton;
     private ToggleButton mUnderlineToggleButton, mStrikeToggleButton;
@@ -141,9 +151,8 @@ public abstract class AbsEditActivity extends SherlockActivity implements
     protected boolean mIsCustomPubDate = false;
     private boolean mIsBackspace = false;
     private boolean mScrollDetected = false;
-    protected boolean mIsNewDraft = false;
-    private boolean mIsExternalInstance = false;
 
+    protected List<String> mSelectedCategories;
     private String mAccountName = "";
     protected int mQuickMediaType = -1;
     private String mMediaCapturePath = "";
@@ -185,13 +194,12 @@ public abstract class AbsEditActivity extends SherlockActivity implements
         if (Intent.ACTION_SEND.equals(action)
                 || Intent.ACTION_SEND_MULTIPLE.equals(action)) {
             // we arrived here from a share action
-            mIsExternalInstance = true;
             if (!selectBlogForShareAction())
                 return;
         } else {
             initBlog();
             if (extras != null) {
-                mAccountName = EscapeUtils.unescapeHtml(extras
+                mAccountName = StringUtils.unescapeHTML(extras
                         .getString("accountName"));
                 mPostID = extras.getLong("postID");
                 mLocalDraft = extras.getBoolean("localDraft", false);
@@ -211,7 +219,6 @@ public abstract class AbsEditActivity extends SherlockActivity implements
                 }
 
                 if (extras.getBoolean("isQuickPress")) {
-                    mIsExternalInstance = true;
                     mBlogID = extras.getInt("id");
                 } else {
                     mBlogID = WordPress.currentBlog.getId();
@@ -239,6 +246,7 @@ public abstract class AbsEditActivity extends SherlockActivity implements
                             return;
                         } else {
                             WordPress.setCurrentPost(mPostable);
+                            mOriginalPost = new Post(mBlogID, mPostID, mIsPage);
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -249,13 +257,13 @@ public abstract class AbsEditActivity extends SherlockActivity implements
 
             if (mIsNew) {
                 mLocalDraft = true;
-                setTitle(EscapeUtils.unescapeHtml(WordPress.currentBlog
+                setTitle(StringUtils.unescapeHTML(WordPress.getCurrentBlog()
                         .getBlogName())
                         + " - "
                         + getString((mIsPage) ? R.string.new_page
                                 : R.string.new_post));
             } else {
-                setTitle(EscapeUtils.unescapeHtml(WordPress.currentBlog
+                setTitle(StringUtils.unescapeHTML(WordPress.getCurrentBlog()
                         .getBlogName())
                         + " - "
                         + getString((mIsPage) ? R.string.edit_page
@@ -266,6 +274,7 @@ public abstract class AbsEditActivity extends SherlockActivity implements
         setContentView(R.layout.edit);
         mContentEditText = (WPEditText) findViewById(R.id.postContent);
         mTitleEditText = (EditText) findViewById(R.id.title);
+        mExcerptEditText = (EditText) findViewById(R.id.postExcerpt);
         mPasswordEditText = (EditText) findViewById(R.id.post_password);
         mLocationText = (TextView) findViewById(R.id.locationText);
         mBoldToggleButton = (ToggleButton) findViewById(R.id.bold);
@@ -273,7 +282,6 @@ public abstract class AbsEditActivity extends SherlockActivity implements
         mBquoteToggleButton = (ToggleButton) findViewById(R.id.bquote);
         mUnderlineToggleButton = (ToggleButton) findViewById(R.id.underline);
         mStrikeToggleButton = (ToggleButton) findViewById(R.id.strike);
-        mCategoriesText = (TextView) findViewById(R.id.selectedCategories);
         mAddPictureButton = (ImageButton) findViewById(R.id.addPictureButton);
         mPubDateButton = (Button) findViewById(R.id.pubDateButton);
         mPubDateText = (TextView) findViewById(R.id.pubDate);
@@ -285,6 +293,8 @@ public abstract class AbsEditActivity extends SherlockActivity implements
         mFormatBar = (RelativeLayout) findViewById(R.id.formatBar);
 
         // Set header labels to upper case
+        ((TextView) findViewById(R.id.categoryLabel)).setText(getResources()
+                .getString(R.string.categories).toUpperCase());
         ((TextView) findViewById(R.id.statusLabel)).setText(getResources()
                 .getString(R.string.status).toUpperCase());
         ((TextView) findViewById(R.id.postFormatLabel)).setText(getResources()
@@ -293,13 +303,12 @@ public abstract class AbsEditActivity extends SherlockActivity implements
                 .getString(R.string.publish_date).toUpperCase());
 
         if (mIsPage) { // remove post specific views
-            ((LinearLayout) findViewById(R.id.section2))
-                    .setVisibility(View.GONE);
-            ((RelativeLayout) findViewById(R.id.section3))
-                    .setVisibility(View.GONE);
-            ((TextView) findViewById(R.id.postFormatLabel))
-                    .setVisibility(View.GONE);
-            ((Spinner) findViewById(R.id.postFormat)).setVisibility(View.GONE);
+            mExcerptEditText.setVisibility(View.GONE);
+            (findViewById(R.id.sectionTags)).setVisibility(View.GONE);
+            (findViewById(R.id.sectionCategories)).setVisibility(View.GONE);
+            (findViewById(R.id.sectionLocation)).setVisibility(View.GONE);
+            (findViewById(R.id.postFormatLabel)).setVisibility(View.GONE);
+            (findViewById(R.id.postFormat)).setVisibility(View.GONE);
         } else {
             if (mBlog.getPostFormats().equals("")) {
                 List<Object> args = new Vector<Object>();
@@ -363,8 +372,7 @@ public abstract class AbsEditActivity extends SherlockActivity implements
                 getResources().getString(R.string.publish_post),
                 getResources().getString(R.string.draft),
                 getResources().getString(R.string.pending_review),
-                getResources().getString(R.string.post_private),
-                getResources().getString(R.string.local_draft) };
+                getResources().getString(R.string.post_private) };
 
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, items);
@@ -387,6 +395,7 @@ public abstract class AbsEditActivity extends SherlockActivity implements
             }
         } else {
             mTitleEditText.setText(mPostable.getTitle());
+            mExcerptEditText.setText(mPostable.getExcerpt());
 
             if (mPostable.isUploaded()) {
                 items = new String[] {
@@ -444,24 +453,10 @@ public abstract class AbsEditActivity extends SherlockActivity implements
                 } else if (status.equals("private")) {
                     mStatusSpinner.setSelection(3, true);
                 } else if (status.equals("localdraft")) {
-                    mStatusSpinner.setSelection(4, true);
+                    mStatusSpinner.setSelection(0, true);
                 }
             }
 
-        }
-
-        if (!mIsPage) {
-            Button selectCategories = (Button) findViewById(R.id.selectCategories);
-            selectCategories.setOnClickListener(this);
-        }
-
-        if (!SeoResultActivity.SHOW_SEO) {
-            RelativeLayout seoWrapper = ((RelativeLayout) findViewById(R.id.section_seo));
-            final int count = seoWrapper.getChildCount();
-            for (int i = 0; i < count; i++) {
-                View v = seoWrapper.getChildAt(i);
-                v.setVisibility(View.GONE);
-            }
         }
 
         registerForContextMenu(mAddPictureButton);
@@ -556,13 +551,19 @@ public abstract class AbsEditActivity extends SherlockActivity implements
         if (itemId == R.id.menu_edit_post) {
             if (mAutoSaveHandler != null)
                 mAutoSaveHandler.removeCallbacks(autoSaveRunnable);
-            if (savePost(false)) {
-                if (mPostable.isUploaded()
-                        || !mPostable.getPostStatus().equals("localdraft")) {
-
-                    preparePost();
-                    startService(new Intent(this, PostUploadService.class));
+            if (savePost(false, false)) {
+                if (mQuickMediaType >= 0) {
+                    if (mQuickMediaType == Constants.QUICK_POST_PHOTO_CAMERA
+                            || mQuickMediaType == Constants.QUICK_POST_PHOTO_LIBRARY)
+                        mPostable.setQuickPostType("QuickPhoto");
+                    else if (mQuickMediaType == Constants.QUICK_POST_VIDEO_CAMERA
+                            || mQuickMediaType == Constants.QUICK_POST_VIDEO_LIBRARY)
+                        mPostable.setQuickPostType("QuickVideo");
                 }
+                WordPress.setCurrentPost(mPostable);
+                PostUploadService.addPostToUpload(mPostable);
+                startService(new Intent(this, PostUploadService.class));
+
                 if (!calledFromList) {
                     startListActivity();
                 } else {
@@ -650,16 +651,28 @@ public abstract class AbsEditActivity extends SherlockActivity implements
         } else if (id == R.id.post) {
             if (mAutoSaveHandler != null)
                 mAutoSaveHandler.removeCallbacks(autoSaveRunnable);
-            if (savePost(false)) {
+            if (savePost(false, false)) {
                 if (mPostable.isUploaded()
                         || !mPostable.getPostStatus().equals("localdraft")) {
-                    preparePost();
+                    if (mQuickMediaType >= 0) {
+                        if (mQuickMediaType == Constants.QUICK_POST_PHOTO_CAMERA
+                                || mQuickMediaType == Constants.QUICK_POST_PHOTO_LIBRARY)
+                            mPostable.setQuickPostType("QuickPhoto");
+                        else if (mQuickMediaType == Constants.QUICK_POST_VIDEO_CAMERA
+                                || mQuickMediaType == Constants.QUICK_POST_VIDEO_LIBRARY)
+                            mPostable.setQuickPostType("QuickVideo");
+                    }
+
+                    WordPress.setCurrentPost(mPostable);
+                    PostUploadService.addPostToUpload(mPostable);
                     startService(new Intent(this, PostUploadService.class));
                 }
                 finish();
             }
         } else if (id == R.id.selectCategories) {
             startCategoryActivity();
+        } else if (id == R.id.categoryButton) {
+            onCategoryButtonClick(v);
         } else if (id == R.id.seoButton) {
             goToSeo();
         }
@@ -670,8 +683,20 @@ public abstract class AbsEditActivity extends SherlockActivity implements
     protected abstract void preparePost();
 
     private void goToSeo() {
-        Intent i = new Intent(this, SeoResultActivity.class);
-        startActivity(i);
+        String title = this.mTitleEditText.getText().toString();
+        String contents = mContentEditText.getText().toString();
+        if (title.length() > 0 && contents.length() > 0) {
+            Intent i = new Intent(this, SeoResultActivity.class);
+            i.putExtra("title", title);
+            i.putExtra("contents", contents);
+            String excerpt = mExcerptEditText.getText().toString();
+            if (excerpt.length() > 0) {
+                i.putExtra("h1", excerpt);
+            }
+            startActivity(i);
+        } else {
+            showDialog(ID_DIALOG_SEO_ALERT);
+        }
     }
 
     @Override
@@ -729,7 +754,7 @@ public abstract class AbsEditActivity extends SherlockActivity implements
                                 .findViewById(R.id.featuredInPost);
 
                         // show featured image checkboxes if theme support it
-                        if (WordPress.currentBlog.isFeaturedImageCapable()) {
+                        if (WordPress.getCurrentBlog().isFeaturedImageCapable()) {
                             featuredCheckBox.setVisibility(View.VISIBLE);
                             featuredInPostCheckBox.setVisibility(View.VISIBLE);
                         }
@@ -781,7 +806,7 @@ public abstract class AbsEditActivity extends SherlockActivity implements
                         alignmentSpinner.setSelection(
                                 span.getHorizontalAlignment(), true);
 
-                        seekBar.setMax(100);
+                        seekBar.setMax(span.getWidth() / 10);
                         if (span.getWidth() != 0)
                             seekBar.setProgress(span.getWidth() / 10);
                         seekBar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
@@ -883,40 +908,46 @@ public abstract class AbsEditActivity extends SherlockActivity implements
     }
 
     private void showCancelAlert(final boolean isUpPress) {
-        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(
-                AbsEditActivity.this);
-        dialogBuilder.setTitle(getResources().getText(R.string.cancel_edit));
-        dialogBuilder.setMessage(getResources().getText(
-                (mIsPage) ? R.string.sure_to_cancel_edit_page
-                        : R.string.sure_to_cancel_edit));
-        dialogBuilder.setPositiveButton(getResources().getText(R.string.yes),
+
+        // Empty post? Let's not prompt then.
+        if (mIsNew && mContentEditText.getText().toString().equals("")
+                && mTitleEditText.getText().toString().equals("")) {
+            finish();
+            return;
+        }
+
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
+        dialogBuilder.setTitle(getString((mIsPage) ? R.string.edit_page
+                : R.string.edit_post));
+        dialogBuilder.setMessage(getString(R.string.prompt_save_changes));
+        dialogBuilder.setPositiveButton(getResources().getText(R.string.save),
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
-                        if (mIsNewDraft)
+                        savePost(false, true);
+                        Intent i = new Intent();
+                        i.putExtra("shouldRefresh", true);
+                        setResult(RESULT_OK, i);
+                        finish();
+                    }
+                });
+        dialogBuilder.setNeutralButton(getString(R.string.discard),
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        // When discard options is chosen, restore existing post or delete new post if it was autosaved.
+                        if (mOriginalPost != null) {
+                            mOriginalPost.update();
+                            WordPress.setCurrentPost(mPostable);
+                        } else if (mPostable != null && mIsNew) {
                             mPostable.delete();
-                        if (isUpPress && mIsExternalInstance) {
-                            Intent intent = new Intent(AbsEditActivity.this,
-                                    (mIsPage) ? PagesActivity.class
-                                            : AbsListActivity.class);
-                            if (mIsPage)
-                                intent.putExtra("viewPages", true);
-                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                            startActivity(intent);
-                        } else {
-                            if (!calledFromList) {
-                                startListActivity();
-                            } else {
-                                Bundle bundle = new Bundle();
-                                bundle.putString("returnStatus", "CANCEL");
-                                Intent mIntent = new Intent();
-                                mIntent.putExtras(bundle);
-                                setResult(RESULT_OK, mIntent);
-                            }
+                            WordPress.setCurrentPost(null);
+                        }
+                        if (!calledFromList) {
+                            startListActivity();
                         }
                         finish();
                     }
                 });
-        dialogBuilder.setNegativeButton(getResources().getText(R.string.no),
+        dialogBuilder.setNegativeButton(getString(R.string.cancel),
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         dialog.dismiss();
@@ -947,7 +978,7 @@ public abstract class AbsEditActivity extends SherlockActivity implements
 
                 Map<String, Object> curHash = accounts.get(i);
                 try {
-                    blogNames[i] = EscapeUtils.unescapeHtml(curHash.get(
+                    blogNames[i] = StringUtils.unescapeHTML(curHash.get(
                             "blogName").toString());
                 } catch (Exception e) {
                     blogNames[i] = curHash.get("url").toString();
@@ -981,7 +1012,7 @@ public abstract class AbsEditActivity extends SherlockActivity implements
                                         .updateLastBlogId(WordPress.currentBlog
                                                 .getId());
                                 mAccountName = blogNames[item];
-                                setTitle(EscapeUtils.unescapeHtml(mAccountName)
+                                setTitle(StringUtils.unescapeHTML(mAccountName)
                                         + " - "
                                         + getResources().getText(
                                                 (mIsPage) ? R.string.new_page
@@ -1001,7 +1032,7 @@ public abstract class AbsEditActivity extends SherlockActivity implements
                 WordPress.currentBlog = mBlog;
                 WordPress.wpDB.updateLastBlogId(WordPress.currentBlog.getId());
                 mAccountName = blogNames[0];
-                setTitle(EscapeUtils.unescapeHtml(mAccountName)
+                setTitle(StringUtils.unescapeHTML(mAccountName)
                         + " - "
                         + getResources().getText(
                                 (mIsPage) ? R.string.new_page
@@ -1231,6 +1262,7 @@ public abstract class AbsEditActivity extends SherlockActivity implements
         mCurrentActivityRequest = ACTIVITY_REQUEST_CODE_PICTURE_LIBRARY;
         startActivityForResult(photoPickerIntent,
                 ACTIVITY_REQUEST_CODE_PICTURE_LIBRARY);
+        AppLockManager.getInstance().setExtendedTimeout();
     }
 
     private void launchCamera() {
@@ -1277,6 +1309,7 @@ public abstract class AbsEditActivity extends SherlockActivity implements
             mCurrentActivityRequest = ACTIVITY_REQUEST_CODE_TAKE_PHOTO;
             startActivityForResult(takePictureFromCameraIntent,
                     ACTIVITY_REQUEST_CODE_TAKE_PHOTO);
+            AppLockManager.getInstance().setExtendedTimeout();
         }
     }
 
@@ -1286,12 +1319,14 @@ public abstract class AbsEditActivity extends SherlockActivity implements
         mCurrentActivityRequest = ACTIVITY_REQUEST_CODE_VIDEO_LIBRARY;
         startActivityForResult(videoPickerIntent,
                 ACTIVITY_REQUEST_CODE_VIDEO_LIBRARY);
+        AppLockManager.getInstance().setExtendedTimeout();
     }
 
     private void launchVideoCamera() {
         mCurrentActivityRequest = ACTIVITY_REQUEST_CODE_TAKE_VIDEO;
         startActivityForResult(new Intent(MediaStore.ACTION_VIDEO_CAPTURE),
                 ACTIVITY_REQUEST_CODE_TAKE_VIDEO);
+        AppLockManager.getInstance().setExtendedTimeout();
     }
 
     @Override
@@ -1315,8 +1350,7 @@ public abstract class AbsEditActivity extends SherlockActivity implements
             switch (requestCode) {
             case ACTIVITY_REQUEST_CODE_PICTURE_LIBRARY:
                 Uri imageUri = data.getData();
-                String imgPath = imageUri.toString();
-                addMedia(imgPath, imageUri);
+                verifyImage(imageUri);
                 break;
             case ACTIVITY_REQUEST_CODE_TAKE_PHOTO:
                 if (resultCode == Activity.RESULT_OK) {
@@ -1324,7 +1358,12 @@ public abstract class AbsEditActivity extends SherlockActivity implements
                         File f = new File(mMediaCapturePath);
                         Uri capturedImageUri = Uri.fromFile(f);
                         f = null;
-                        addMedia(capturedImageUri.toString(), capturedImageUri);
+                        if (!addMedia(capturedImageUri, null))
+                            Toast.makeText(
+                                    this,
+                                    getResources().getText(
+                                            R.string.gallery_error),
+                                    Toast.LENGTH_SHORT).show();
                         sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED,
                                 Uri.parse("file://"
                                         + Environment
@@ -1338,13 +1377,18 @@ public abstract class AbsEditActivity extends SherlockActivity implements
                 break;
             case ACTIVITY_REQUEST_CODE_VIDEO_LIBRARY:
                 Uri videoUri = data.getData();
-                String videoPath = videoUri.toString();
-                addMedia(videoPath, videoUri);
+                if (!addMedia(videoUri, null))
+                    Toast.makeText(this,
+                            getResources().getText(R.string.gallery_error),
+                            Toast.LENGTH_SHORT).show();
                 break;
             case ACTIVITY_REQUEST_CODE_TAKE_VIDEO:
                 if (resultCode == Activity.RESULT_OK) {
-                    Uri capturedVideo = data.getData();
-                    addMedia(capturedVideo.toString(), capturedVideo);
+                    Uri capturedVideoUri = data.getData();
+                    if (!addMedia(capturedVideoUri, null))
+                        Toast.makeText(this,
+                                getResources().getText(R.string.gallery_error),
+                                Toast.LENGTH_SHORT).show();
                 }
                 break;
             case ACTIVITY_REQUEST_CODE_CREATE_LINK:
@@ -1411,20 +1455,168 @@ public abstract class AbsEditActivity extends SherlockActivity implements
         }// end null check
     }
 
-    protected String getCategoriesCSV(JSONArray mCategories) {
-        String csv = "";
-        if (mCategories.length() > 0) {
-            for (int i = 0; i < mCategories.length(); i++) {
-                try {
-                    csv += EscapeUtils.unescapeHtml(mCategories.getString(i))
-                            + ",";
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-            csv = csv.substring(0, csv.length() - 1);
+    private void verifyImage(Uri imageUri) {
+        if (isPicasaImage(imageUri)) {
+            // Create an AsyncTask to download the file
+            new DownloadImageTask().execute(imageUri);
+        } else {
+            // It is a regular local image file
+            if (!addMedia(imageUri, null))
+                Toast.makeText(this,
+                        getResources().getText(R.string.gallery_error),
+                        Toast.LENGTH_SHORT).show();
         }
-        return csv;
+    }
+
+    private boolean isPicasaImage(Uri imageUri) {
+        // Check if the imageUri returned is of picasa or not
+        if (imageUri.toString().startsWith(
+                "content://com.android.gallery3d.provider")) {
+            // Use the com.google provider for devices prior to 3.0
+            imageUri = Uri.parse(imageUri.toString().replace(
+                    "com.android.gallery3d", "com.google.android.gallery3d"));
+        }
+
+        if (imageUri.toString().startsWith(
+                "content://com.google.android.gallery3d"))
+            return true;
+        else
+            return false;
+    }
+
+    private class DownloadImageTask extends AsyncTask<Uri, Integer, Uri> {
+
+        @Override
+        protected Uri doInBackground(Uri... uris) {
+            Uri imageUri = uris[0];
+            return downloadExternalImage(imageUri);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            showDialog(ID_DIALOG_DOWNLOAD);
+        }
+
+        protected void onPostExecute(Uri newUri) {
+            dismissDialog(ID_DIALOG_DOWNLOAD);
+            if (newUri != null)
+                addMedia(newUri, null);
+            else
+                Toast.makeText(getApplicationContext(),
+                        getString(R.string.error_downloading_image),
+                        Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private Uri downloadExternalImage(Uri imageUri) {
+        File cacheDir;
+
+        // If the device has an SD card
+        if (android.os.Environment.getExternalStorageState().equals(
+                android.os.Environment.MEDIA_MOUNTED))
+            cacheDir = new File(
+                    android.os.Environment.getExternalStorageDirectory()
+                            + "/WordPress/images");
+        else {
+            // If no SD card
+            cacheDir = getApplicationContext().getCacheDir();
+        }
+
+        if (!cacheDir.exists())
+            cacheDir.mkdirs();
+        Random r = new Random();
+        final String path = "wp-" + r.nextInt(400) + r.nextInt(400) + ".jpg";
+
+        File f = new File(cacheDir, path);
+
+        try {
+            InputStream input;
+            // Download the file
+            if (imageUri.toString().startsWith(
+                    "content://com.google.android.gallery3d")) {
+                input = getContentResolver().openInputStream(imageUri);
+            } else {
+                input = new URL(imageUri.toString()).openStream();
+            }
+            OutputStream output = new FileOutputStream(f);
+
+            byte data[] = new byte[1024];
+            int count;
+            while ((count = input.read(data)) != -1) {
+                output.write(data, 0, count);
+            }
+
+            output.flush();
+            output.close();
+            input.close();
+
+            Uri newUri = Uri.fromFile(f);
+            return newUri;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    private void onCategoryButtonClick(View v) {
+        // Get category name by removing prefix from the tag
+        boolean listChanged = false;
+        String categoryName = (String) v.getTag();
+        categoryName = categoryName.replaceFirst(CATEGORY_PREFIX_TAG, "");
+
+        // Remove clicked category from list
+        for (int i = 0; i < mCategories.size(); i++) {
+            if (mCategories.get(i).equals(categoryName)) {
+                mCategories.remove(i);
+                listChanged = true;
+                break;
+            }
+        }
+
+        // Recreate category views
+        if (listChanged) {
+            populateSelectedCategories();
+        }
+    }
+
+    protected void populateSelectedCategories() {
+        ViewGroup sectionCategories = ((ViewGroup) findViewById(R.id.sectionCategories));
+
+        // Remove previous category buttons if any + select category button
+        List<View> viewsToRemove = new ArrayList<View>();
+        for (int i = 0; i < sectionCategories.getChildCount(); i++) {
+            View v = sectionCategories.getChildAt(i);
+            Object tag = v.getTag();
+            if (tag != null
+                    && tag.getClass() == String.class
+                    && (((String) tag).startsWith(CATEGORY_PREFIX_TAG) || tag
+                            .equals("select-category"))) {
+                viewsToRemove.add(v);
+            }
+        }
+        for (int i = 0; i < viewsToRemove.size(); i++) {
+            sectionCategories.removeView(viewsToRemove.get(i));
+        }
+        viewsToRemove.clear();
+
+        // New category buttons
+        LayoutInflater layoutInflater = getLayoutInflater();
+        for (int i = 0; i < mCategories.size(); i++) {
+            String categoryName = mCategories.get(i);
+            Button buttonCategory = (Button) layoutInflater.inflate(
+                    R.layout.category_button, null);
+            buttonCategory.setText(Html.fromHtml(categoryName));
+            buttonCategory.setTag(CATEGORY_PREFIX_TAG + categoryName);
+            buttonCategory.setOnClickListener(this);
+            sectionCategories.addView(buttonCategory);
+        }
+
+        // Add select category button
+        Button selectCategory = (Button) layoutInflater.inflate(
+                R.layout.category_select_button, null);
+        selectCategory.setOnClickListener(this);
+        sectionCategories.addView(selectCategory);
     }
 
     @Override
@@ -1447,11 +1639,27 @@ public abstract class AbsEditActivity extends SherlockActivity implements
             loadingDialog.setIndeterminate(true);
             loadingDialog.setCancelable(true);
             return loadingDialog;
+        case ID_DIALOG_SEO_ALERT:
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(R.string.empty_fields);
+            builder.setMessage(R.string.seo_error_message_input_empty);
+            builder.setPositiveButton(R.string.ok,
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            switch (which) {
+                            case DialogInterface.BUTTON_POSITIVE:
+                                dialog.dismiss();
+                                break;
+                            }
+                        }
+                    });
+            return builder.create();
         }
         return super.onCreateDialog(id);
     }
 
-    protected abstract boolean savePost(boolean autoSave);
+    protected abstract boolean savePost(boolean isAutoSave, boolean isDraftSave);
 
     protected void setContent() {
         Intent intent = getIntent();
@@ -1471,8 +1679,7 @@ public abstract class AbsEditActivity extends SherlockActivity implements
                 text = text.replaceAll("((http|https|ftp|mailto):\\S+)",
                         "<a href=\"$1\">$1</a>");
                 mContentEditText.setText(WPHtml.fromHtml(
-                        StringHelper.addPTags(text), AbsEditActivity.this,
-                        mPostable));
+                        StringUtils.addPTags(text), this, mPostable));
             }
         } else {
             String action = intent.getAction();
@@ -1507,20 +1714,19 @@ public abstract class AbsEditActivity extends SherlockActivity implements
             String type = (String) args[0].get(1);
             SpannableStringBuilder ssb = new SpannableStringBuilder();
             for (int i = 0; i < multi_stream.size(); i++) {
-                Uri curStream = (Uri) multi_stream.get(i);
-                if (curStream != null && type != null) {
-                    String imgPath = curStream.getEncodedPath();
-                    ssb = addMediaFromShareAction(imgPath, curStream, ssb);
+                Uri imageUri = (Uri) multi_stream.get(i);
+                if (imageUri != null && type != null) {
+                    addMedia(imageUri, ssb);
                 }
             }
             return ssb;
         }
 
-        protected void onPostExecute(SpannableStringBuilder result) {
+        protected void onPostExecute(SpannableStringBuilder ssb) {
             dismissDialog(ID_DIALOG_LOADING);
-            if (result != null) {
-                if (result.length() > 0) {
-                    mContentEditText.setText(result);
+            if (ssb != null) {
+                if (ssb.length() > 0) {
+                    mContentEditText.setText(ssb);
                 }
             } else {
                 Toast.makeText(AbsEditActivity.this,
@@ -1530,10 +1736,42 @@ public abstract class AbsEditActivity extends SherlockActivity implements
         }
     }
 
-    private void addMedia(String imgPath, Uri curStream) {
+    //Calculate the minimun width between the blog setting and picture real width
+    private void setWPImageSpanWidth(Uri curStream, WPImageSpan is) {
+        String imageWidth = WordPress.getCurrentBlog().getMaxImageWidth();
+        int imageWidthBlogSetting = Integer.MAX_VALUE;
 
-        if (mFormatBar.getVisibility() == View.VISIBLE)
-            hideFormatBar();
+        if (!imageWidth.equals("Original Size")) {
+            try {
+                imageWidthBlogSetting = Integer.valueOf(imageWidth);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+        }
+
+        int[] dimensions = ImageHelper.getImageSize(curStream, this);
+        int imageWidthPictureSetting = dimensions[0] == 0 ? Integer.MAX_VALUE
+                : dimensions[0];
+
+        if (Math.min(imageWidthPictureSetting, imageWidthBlogSetting) == Integer.MAX_VALUE) {
+            is.setWidth(1024); //Default value in case of errors reading the picture size and the blog settings is set to Original size
+        } else {
+            is.setWidth(Math.min(imageWidthPictureSetting,
+                    imageWidthBlogSetting));
+        }
+    }
+
+    private boolean addMedia(Uri imageUri, SpannableStringBuilder ssb) {
+
+        //if (mFormatBar.getVisibility() == View.VISIBLE)
+        //    hideFormatBar();
+
+        if (ssb != null && isPicasaImage(imageUri))
+            imageUri = downloadExternalImage(imageUri);
+
+        if (imageUri == null) {
+            return false;
+        }
 
         Bitmap resizedBitmap = null;
         ImageHelper ih = new ImageHelper();
@@ -1543,15 +1781,12 @@ public abstract class AbsEditActivity extends SherlockActivity implements
         if (width > height)
             width = height;
 
-        Map<String, Object> mediaData = ih.getImageBytesForPath(imgPath,
-                AbsEditActivity.this);
+        Map<String, Object> mediaData = ih.getImageBytesForPath(
+                imageUri.getEncodedPath(), this);
 
         if (mediaData == null) {
             // data stream not returned
-            Toast.makeText(AbsEditActivity.this,
-                    getResources().getText(R.string.gallery_error),
-                    Toast.LENGTH_SHORT).show();
-            return;
+            return false;
         }
 
         BitmapFactory.Options opts = new BitmapFactory.Options();
@@ -1569,80 +1804,89 @@ public abstract class AbsEditActivity extends SherlockActivity implements
                 (String) mediaData.get("orientation"), true);
 
         if (finalBytes == null) {
-            Toast.makeText(AbsEditActivity.this,
-                    getResources().getText(R.string.out_of_memory),
-                    Toast.LENGTH_SHORT).show();
-            return;
+            //Toast.makeText(EditPostActivity.this, getResources().getText(R.string.out_of_memory), Toast.LENGTH_SHORT).show();
+            return false;
         }
 
         resizedBitmap = BitmapFactory.decodeByteArray(finalBytes, 0,
                 finalBytes.length);
 
-        int selectionStart = mContentEditText.getSelectionStart();
-        mStyleStart = selectionStart;
-        int selectionEnd = mContentEditText.getSelectionEnd();
+        if (ssb != null) {
+            WPImageSpan is = new WPImageSpan(this, resizedBitmap, imageUri);
 
-        if (selectionStart > selectionEnd) {
-            int temp = selectionEnd;
-            selectionEnd = selectionStart;
-            selectionStart = temp;
-        }
+            setWPImageSpanWidth(imageUri, is);
 
-        Editable s = mContentEditText.getText();
-        WPImageSpan is = new WPImageSpan(AbsEditActivity.this, resizedBitmap,
-                curStream);
+            is.setTitle((String) mediaData.get("title"));
+            is.setImageSource(imageUri);
+            is.setVideo(imageUri.getEncodedPath().contains("video"));
+            ssb.append(" ");
+            ssb.setSpan(is, ssb.length() - 1, ssb.length(),
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            AlignmentSpan.Standard as = new AlignmentSpan.Standard(
+                    Layout.Alignment.ALIGN_CENTER);
+            ssb.setSpan(as, ssb.length() - 1, ssb.length(),
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            ssb.append("\n");
+        } else {
+            int selectionStart = mContentEditText.getSelectionStart();
+            mStyleStart = selectionStart;
+            int selectionEnd = mContentEditText.getSelectionEnd();
 
-        String imageWidth = WordPress.currentBlog.getMaxImageWidth();
-        if (!imageWidth.equals("Original Size")) {
+            if (selectionStart > selectionEnd) {
+                int temp = selectionEnd;
+                selectionEnd = selectionStart;
+                selectionStart = temp;
+            }
+
+            Editable s = mContentEditText.getText();
+            WPImageSpan is = new WPImageSpan(this, resizedBitmap, imageUri);
+
+            setWPImageSpanWidth(imageUri, is);
+
+            is.setTitle((String) mediaData.get("title"));
+            is.setImageSource(imageUri);
+            if (imageUri.getEncodedPath().contains("video")) {
+                is.setVideo(true);
+            }
+
+            int line = 0, column = 0;
             try {
-                is.setWidth(Integer.valueOf(imageWidth));
-            } catch (NumberFormatException e) {
+                line = mContentEditText.getLayout().getLineForOffset(
+                        selectionStart);
+                column = mContentEditText.getSelectionStart()
+                        - mContentEditText.getLayout().getLineStart(line);
+            } catch (Exception ex) {
+            }
+
+            WPImageSpan[] image_spans = s.getSpans(selectionStart,
+                    selectionEnd, WPImageSpan.class);
+            if (image_spans.length != 0) {
+                // insert a few line breaks if the cursor is already on an image
+                s.insert(selectionEnd, "\n\n");
+                selectionStart = selectionStart + 2;
+                selectionEnd = selectionEnd + 2;
+            } else if (column != 0) {
+                // insert one line break if the cursor is not at the first column
+                s.insert(selectionEnd, "\n");
+                selectionStart = selectionStart + 1;
+                selectionEnd = selectionEnd + 1;
+            }
+
+            s.insert(selectionStart, " ");
+            s.setSpan(is, selectionStart, selectionEnd + 1,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            AlignmentSpan.Standard as = new AlignmentSpan.Standard(
+                    Layout.Alignment.ALIGN_CENTER);
+            s.setSpan(as, selectionStart, selectionEnd + 1,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            s.insert(selectionEnd + 1, "\n\n");
+            try {
+                mContentEditText.setSelection(s.length());
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-
-        is.setTitle((String) mediaData.get("title"));
-        is.setImageSource(curStream);
-        if (imgPath.contains("video")) {
-            is.setVideo(true);
-        }
-
-        int line = 0, column = 0;
-        try {
-            line = mContentEditText.getLayout()
-                    .getLineForOffset(selectionStart);
-            column = mContentEditText.getSelectionStart()
-                    - mContentEditText.getLayout().getLineStart(line);
-        } catch (Exception ex) {
-        }
-
-        WPImageSpan[] image_spans = s.getSpans(selectionStart, selectionEnd,
-                WPImageSpan.class);
-        if (image_spans.length != 0) {
-            // insert a few line breaks if the cursor is already on an image
-            s.insert(selectionEnd, "\n\n");
-            selectionStart = selectionStart + 2;
-            selectionEnd = selectionEnd + 2;
-        } else if (column != 0) {
-            // insert one line break if the cursor is not at the first column
-            s.insert(selectionEnd, "\n");
-            selectionStart = selectionStart + 1;
-            selectionEnd = selectionEnd + 1;
-        }
-
-        s.insert(selectionStart, " ");
-        s.setSpan(is, selectionStart, selectionEnd + 1,
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        AlignmentSpan.Standard as = new AlignmentSpan.Standard(
-                Layout.Alignment.ALIGN_CENTER);
-        s.setSpan(as, selectionStart, selectionEnd + 1,
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.insert(selectionEnd + 1, "\n\n");
-        try {
-            mContentEditText.setSelection(s.length());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        return true;
     }
 
     public SpannableStringBuilder addMediaFromShareAction(String imgPath,
@@ -1752,7 +1996,7 @@ public abstract class AbsEditActivity extends SherlockActivity implements
     private Runnable autoSaveRunnable = new Runnable() {
         @Override
         public void run() {
-            savePost(true);
+            savePost(true, false);
             mAutoSaveHandler.postDelayed(this, AUTOSAVE_DELAY_MILLIS);
         }
     };

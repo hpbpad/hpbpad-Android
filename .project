@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>hpb pad</name>
+	<name>hpbpad</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -13,6 +13,16 @@
 		<buildCommand>
 			<name>com.android.ide.eclipse.adt.PreCompilerBuilder</name>
 			<arguments>
+			</arguments>
+		</buildCommand>
+		<buildCommand>
+			<name>org.eclipse.ui.externaltools.ExternalToolBuilder</name>
+			<triggers>auto,full,incremental,</triggers>
+			<arguments>
+				<dictionary>
+					<key>LaunchConfigHandle</key>
+					<value>&lt;project&gt;/.externalToolBuilders/新規ビルダー.launch</value>
+				</dictionary>
 			</arguments>
 		</buildCommand>
 		<buildCommand>

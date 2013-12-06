@@ -8,7 +8,7 @@
 		android:orientation="horizontal">
 		<FrameLayout android:layout_weight="0.4"
 			android:layout_width="0dp" android:layout_height="match_parent">
-			<fragment android:name="org.wordpress.android.ui.list.ViewPostsFragment"
+			<fragment android:name="org.wordpress.android.ui.posts.PostsListFragment"
 				android:id="@+id/postList" android:layout_width="match_parent"
 				android:layout_height="match_parent" />
 			<LinearLayout android:layout_width="fill_parent"

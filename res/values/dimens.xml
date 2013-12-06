@@ -9,9 +9,10 @@
 	<dimen name="format_bar_height">40dp</dimen>
 	<dimen name="content_edit_padding">46dp</dimen>
 	<dimen name="menu_image_size">32dp</dimen>
-	<dimen name="menu_shadow_width">10dp</dimen>
+	<dimen name="menu_shadow_width">4dp</dimen>
 	<dimen name="add_account_width">-1dp</dimen>
 	<dimen name="refresh_icon_padding">12dp</dimen>
+	<dimen name="category_row_height">60dp</dimen>
 
 	<!-- startpage -->
 	<dimen name="startpage_slidingview_padding">9dp</dimen>
@@ -27,12 +28,14 @@
 	<dimen name="startpage_type_text_small">14sp</dimen>
 	<dimen name="startpage_type_text_large">19sp</dimen>
 
-	<dimen name="startpage_actionbar_margin">24sp</dimen>
+	<dimen name="startpage_actionbar_left_margin">-26dp</dimen>
+	<dimen name="startpage_actionbar_right_margin">11dp</dimen>
 
 	<!-- Menu Drawer -->
 	<dimen name="menu_drawer_left">8dp</dimen>
 	<dimen name="menu_drawer_size">250dp</dimen>
 
-	<dimen name="graph_text_width">110dp</dimen>
+	<dimen name="graph_num_width">20dp</dimen>
 	<dimen name="graph_rate_width">40dp</dimen>
+	<dimen name="graph_single_height">24dp</dimen>
 </resources>

@@ -21,15 +21,8 @@ import com.justsystems.hpb.pad.util.Debug;
  * 2.3以下ではViewのorientation属性に対応していないため、独自に実装した。
  * 
  */
-public class SlidingView extends LinearLayout implements AnimationListener,
-        OnTouchListener, OnGestureListener {
-
-    public static interface OnStateChengeListener {
-
-        public void onOpen();
-
-        public void onClose();
-    }
+public class SlidingView extends LinearLayout implements AbsSlidingView,
+        AnimationListener, OnTouchListener, OnGestureListener {
 
     /** アニメーションの最大時間 */
     private static final int MAX_ANIMATION_DURATION = 700;
@@ -68,28 +61,20 @@ public class SlidingView extends LinearLayout implements AnimationListener,
         this.handle.setOnTouchListener(this.touchListener);
     }
 
-    public void toggle() {
-        if (isOpen) {
-            close();
-        } else {
-            open();
-        }
-    }
-
-    public void openWitoutAnimation() {
+    public void open() {
         offsetTopAndBottom(-getTop());
         isOpen = true;
     }
 
-    public void open() {
-        open(DEFAULT_ANIMATION_DURATION, true);
+    public void animateOpen() {
+        animateOpen(DEFAULT_ANIMATION_DURATION, true);
     }
 
-    public void open(int duration) {
-        open(duration, false);
+    public void animateOpen(int duration) {
+        animateOpen(duration, false);
     }
 
-    private void open(int duration, boolean calcOffset) {
+    private void animateOpen(int duration, boolean calcOffset) {
         if (isOpen) {
             return;
         }
@@ -106,20 +91,20 @@ public class SlidingView extends LinearLayout implements AnimationListener,
         startAnimation(anim);
     }
 
-    public void closeWitoutAnimation() {
+    public void close() {
         offsetTopAndBottom(-getTop() - getHeight());
         isOpen = false;
     }
 
-    public void close() {
-        close(DEFAULT_ANIMATION_DURATION, true);
+    public void animateClose() {
+        animateClose(DEFAULT_ANIMATION_DURATION, true);
     }
 
-    public void close(int duration) {
-        close(duration, false);
+    public void animateClose(int duration) {
+        animateClose(duration, false);
     }
 
-    public void close(int duration, boolean calcOffset) {
+    public void animateClose(int duration, boolean calcOffset) {
         if (!isOpen) {
             return;
         }
@@ -155,7 +140,7 @@ public class SlidingView extends LinearLayout implements AnimationListener,
         }
     }
 
-    public boolean isOpen() {
+    public boolean isOpened() {
         return this.isOpen;
     }
 
@@ -203,7 +188,7 @@ public class SlidingView extends LinearLayout implements AnimationListener,
 
     @Override
     public boolean onSingleTapUp(MotionEvent e) {
-        close();
+        animateClose();
         return true;
     }
 
@@ -230,7 +215,7 @@ public class SlidingView extends LinearLayout implements AnimationListener,
             final int animationDuration = (int) (time * restY / distY);
             Debug.logd("animationDuration" + animationDuration);
 
-            close(animationDuration);
+            animateClose(animationDuration);
             return true;
         }
         return false;
@@ -278,7 +263,7 @@ public class SlidingView extends LinearLayout implements AnimationListener,
                     offsetTopAndBottom(-getTop());
                     invalidate();
                 } else {
-                    close();
+                    animateClose();
                 }
                 this.downY = 0;
                 break;
