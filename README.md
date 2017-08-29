@@ -28,5 +28,6 @@ hpbpadではversion3.0.2を利用しています。
 
 ## 情報 ##
 
-hpb pad for WordPressはオープンソースプロジェクトであり、[WordPress for Android][wp-android]を元に開発しています。
+hpb pad for WordPressはオープンソースプロジェクトであり、[WordPress for Android][wp-android]を元に開発しました。
+2017/08/14 アプリのダウンロード提供は終了しました。
 [wp-android]: https://github.com/wordpress-mobile/WordPress-Android
